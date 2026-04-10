@@ -5,10 +5,10 @@ inter-canister calls).  ``setup_services()`` must be called **after**
 ``Database.init()`` to register tokens and FX pairs in the DB.
 """
 
-from basilisk.os.wallet import Wallet
-from basilisk.os.fx import FXService
-from basilisk.os.vetkeys import VetKeyService
-from basilisk.os.crypto import CryptoService
+from basilisk.toolkit.wallet import Wallet
+from basilisk.toolkit.fx import FXService
+from basilisk.toolkit.vetkeys import VetKeyService
+from basilisk.toolkit.crypto import CryptoService
 
 # ---------------------------------------------------------------------------
 # Service singletons

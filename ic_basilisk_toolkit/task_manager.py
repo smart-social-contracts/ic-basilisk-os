@@ -30,7 +30,7 @@ from ic_python_logging import get_logger
 from .entities import Call, Task, TaskExecution, TaskSchedule, TaskStep
 from .status import TaskExecutionStatus, TaskStatus
 
-logger = get_logger("basilisk.os.task_manager")
+logger = get_logger("basilisk.toolkit.task_manager")
 
 
 def get_now() -> int:

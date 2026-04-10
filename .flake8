@@ -1,6 +1,14 @@
 [flake8]
-# Ignore line length, blank line at end of file, and line break before binary operator
-ignore = E501,W391,W503
+# E501  line too long (handled by black)
+# E203  whitespace before ':' (black-compatible)
+# E402  module level import not at top (tests use sys.path.insert before imports)
+# E741  ambiguous variable name
+# W391  blank line at end of file
+# W503  line break before binary operator
+# W504  line break after binary operator
+# F541  f-string without placeholders
+# F824  global unused
+ignore = E501,E203,E402,E741,W391,W503,W504,F541,F824
 
 # Other style checks will still be enforced
 exclude = 

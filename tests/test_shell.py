@@ -14,7 +14,7 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from ic_basilisk_os.shell import canister_exec, _parse_candid, _handle_magic
+from ic_basilisk_toolkit.shell import canister_exec, _parse_candid, _handle_magic
 from tests.conftest import exec_on_canister, magic_on_canister
 
 

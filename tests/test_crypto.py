@@ -16,7 +16,7 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from ic_basilisk_os.shell import (
+from ic_basilisk_toolkit.shell import (
     _handle_magic,
     _handle_group,
     _handle_crypto,
@@ -43,7 +43,7 @@ from ic_basilisk_os.shell import (
     canister_exec,
 )
 try:
-    from ic_basilisk_os.crypto import (
+    from ic_basilisk_toolkit.crypto import (
         encode_envelope,
         decode_envelope,
         encode_ciphertext,

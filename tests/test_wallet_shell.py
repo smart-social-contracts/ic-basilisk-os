@@ -16,7 +16,7 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from ic_basilisk_os.shell import (
+from ic_basilisk_toolkit.shell import (
     _parse_subaccount,
     _candid_subaccount,
     _handle_wallet,

@@ -1,7 +1,7 @@
 """
-Basilisk OS — CLI for canister interaction.
+Basilisk Toolkit — CLI for canister interaction.
 
-Usage: basilisk-os <command> [options]
+Usage: basilisk-toolkit <command> [options]
 
 Commands:
   exec <code>      Execute Python code on a deployed canister
@@ -17,7 +17,7 @@ Other:
   --version        Print version info
   help, -h         Show this help
 
-Run basilisk-os <command> --help for command-specific options and examples.
+Run basilisk-toolkit <command> --help for command-specific options and examples.
 """
 
 import json
@@ -28,11 +28,11 @@ import sys
 from pathlib import Path
 
 _HELP_EXEC = """\
-basilisk-os exec — Execute Python code on a deployed canister.
+basilisk-toolkit exec — Execute Python code on a deployed canister.
 
-Usage: basilisk-os exec [options] <code>
-       basilisk-os exec [options] -f <file>
-       echo "code" | basilisk-os exec [options]
+Usage: basilisk-toolkit exec [options] <code>
+       basilisk-toolkit exec [options] -f <file>
+       echo "code" | basilisk-toolkit exec [options]
 
 Options:
   --canister <id>  Canister name or principal ID  [auto-detect from dfx.json]
@@ -40,11 +40,11 @@ Options:
   -f <file>        Execute a local Python file instead of inline code
 
 Examples:
-  basilisk-os exec 'print("hello")'                         Inline code
-  basilisk-os exec --canister my_app 'print(1+1)'           Explicit canister
-  basilisk-os exec --network ic 'print(ic.time())'          On mainnet
-  basilisk-os exec -f script.py                             Run a local file
-  echo "import sys; print(sys.version)" | basilisk-os exec  Pipe from stdin
+  basilisk-toolkit exec 'print("hello")'                         Inline code
+  basilisk-toolkit exec --canister my_app 'print(1+1)'           Explicit canister
+  basilisk-toolkit exec --network ic 'print(ic.time())'          On mainnet
+  basilisk-toolkit exec -f script.py                             Run a local file
+  echo "import sys; print(sys.version)" | basilisk-toolkit exec  Pipe from stdin
 """
 
 
@@ -112,7 +112,7 @@ def cmd_exec(args: list[str]):
         code = sys.stdin.read()
 
     if not code.strip():
-        print("Error: no code provided. Usage: basilisk-os exec [--canister <c>] [--network <n>] [-f <file>] <code>", file=sys.stderr)
+        print("Error: no code provided. Usage: basilisk-toolkit exec [--canister <c>] [--network <n>] [-f <file>] <code>", file=sys.stderr)
         sys.exit(1)
 
     # Auto-detect canister if not specified
@@ -159,20 +159,20 @@ def main():
         cmd_exec(sys.argv[2:])
 
     elif command == "shell":
-        from ic_basilisk_os.shell import main as shell_main
-        sys.argv = ["basilisk-os-shell"] + sys.argv[2:]
+        from ic_basilisk_toolkit.shell import main as shell_main
+        sys.argv = ["basilisk-toolkit-shell"] + sys.argv[2:]
         shell_main()
 
     elif command == "sshd":
-        from ic_basilisk_os.sshd import main as sshd_main
-        sys.argv = ["basilisk-os-sshd"] + sys.argv[2:]
+        from ic_basilisk_toolkit.sshd import main as sshd_main
+        sys.argv = ["basilisk-toolkit-sshd"] + sys.argv[2:]
         sshd_main()
 
     elif command in ("-h", "--help", "help"):
         print(__doc__.strip())
 
     elif command == "--version":
-        from ic_basilisk_os import __version__
+        from ic_basilisk_toolkit import __version__
         print(__version__)
 
     else:

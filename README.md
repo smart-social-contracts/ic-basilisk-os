@@ -1,10 +1,10 @@
-# ic-basilisk-os
+# ic-basilisk-toolkit
 
 **Basilisk OS** — Operating system services, interactive shell, and SFTP for [Basilisk](https://github.com/smart-social-contracts/basilisk) IC Python canisters.
 
 ## Overview
 
-`ic-basilisk-os` provides POSIX-like abstractions on top of the Basilisk CDK:
+`ic-basilisk-toolkit` provides POSIX-like abstractions on top of the Basilisk CDK:
 
 - **Task/Process Management** — `Task`, `TaskStep`, `TaskSchedule`, `TaskManager`
 - **Wallet** — ICRC-1 token registry, transfers, balance tracking, transaction sync
@@ -12,26 +12,26 @@
 - **FX** — Exchange rate queries via the IC XRC canister (`FXService`)
 - **Entities** — Persistent ORM entities via [ic-python-db](https://github.com/smart-social-contracts/ic-python-db)
 - **Logging** — Structured logging via [ic-python-logging](https://github.com/smart-social-contracts/ic-python-logging)
-- **Interactive Shell** — REPL for live canister interaction (`basilisk-os shell`)
-- **SFTP** — Browse and edit canister filesystem over SSH (`basilisk-os sshd`)
+- **Interactive Shell** — REPL for live canister interaction (`basilisk-toolkit shell`)
+- **SFTP** — Browse and edit canister filesystem over SSH (`basilisk-toolkit sshd`)
 
 ## Installation
 
 ```bash
-pip install ic-basilisk-os
+pip install ic-basilisk-toolkit
 ```
 
 For shell/SFTP support (requires `asyncssh`):
 ```bash
-pip install ic-basilisk-os[shell]
+pip install ic-basilisk-toolkit[shell]
 ```
 
 ## CLI Usage
 
 ```
-basilisk-os exec 'print("hello")'                    # Execute code on canister
-basilisk-os shell --canister my_app --network ic      # Interactive shell
-basilisk-os sshd --canister my_app --network ic       # SSH/SFTP server
+basilisk-toolkit exec 'print("hello")'                    # Execute code on canister
+basilisk-toolkit shell --canister my_app --network ic      # Interactive shell
+basilisk-toolkit sshd --canister my_app --network ic       # SSH/SFTP server
 ```
 
 ## Canister-Side Usage
@@ -39,7 +39,7 @@ basilisk-os sshd --canister my_app --network ic       # SSH/SFTP server
 Inside your canister code:
 
 ```python
-from ic_basilisk_os import Task, TaskStep, Wallet, CryptoService
+from ic_basilisk_toolkit import Task, TaskStep, Wallet, CryptoService
 
 # Create and schedule a task
 task = Task(name="sync_balances")
@@ -55,8 +55,8 @@ TaskStep(task=task, name="fetch", code="wallet.refresh_all()")
 ## Development
 
 ```bash
-git clone https://github.com/smart-social-contracts/ic-basilisk-os.git
-cd ic-basilisk-os
+git clone https://github.com/smart-social-contracts/ic-basilisk-toolkit.git
+cd ic-basilisk-toolkit
 pip install -r requirements.txt
 pip install -r requirements-dev.txt
 pip install -e .

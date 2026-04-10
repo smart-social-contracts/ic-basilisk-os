@@ -15,7 +15,7 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from ic_basilisk_os.shell import (
+from ic_basilisk_toolkit.shell import (
     _handle_magic,
     _handle_task,
     _TASK_RESOLVE,
@@ -1439,7 +1439,7 @@ class TestTaskLogFeatures:
             # We can't test the actual polling loop in CI, but we can verify
             # the flag doesn't cause an error by checking _handle_task directly.
             # The follow loop would run forever, so instead test the query works.
-            from ic_basilisk_os.shell import _task_log_follow_query, canister_exec
+            from ic_basilisk_toolkit.shell import _task_log_follow_query, canister_exec
             query_code = _task_log_follow_query(str(tid))
             query_result = canister_exec(query_code, canister, network)
             # Should contain the task status line

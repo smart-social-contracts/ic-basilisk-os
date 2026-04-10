@@ -47,7 +47,7 @@ def _make_process_factory(canister: str, network: str, module_dir: str):
     async def process_factory(process):
         """Called when a client requests a shell or exec channel."""
         cmd = [
-            sys.executable, "-u", "-m", "ic_basilisk_os.shell",
+            sys.executable, "-u", "-m", "ic_basilisk_toolkit.shell",
             "--canister", canister,
         ]
         if network:

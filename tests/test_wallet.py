@@ -42,7 +42,7 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from ic_basilisk_os.shell import _parse_candid
+from ic_basilisk_toolkit.shell import _parse_candid
 
 # Directory containing dfx.json with local network config
 _TEST_CANISTER_DIR = os.path.join(os.path.dirname(__file__), "test_canister")
@@ -276,7 +276,7 @@ def _magic_to_code(cmd):
     _task_create_code takes a single 'rest' string (everything after '%task create').
     _task_info_code, _task_log_code, etc. take a single 'tid' string.
     """
-    from ic_basilisk_os.shell import (
+    from ic_basilisk_toolkit.shell import (
         _task_list_code, _task_create_code, _task_add_step_code, _task_info_code,
         _task_start_code, _task_stop_code, _task_delete_code, _task_log_code,
     )
@@ -338,7 +338,7 @@ class TestTokenRegistry:
 
     def test_register_token(self, wallet_reachable, wallet_canister, wallet_network):
         """Register a new token and verify it's persisted."""
-        from ic_basilisk_os.wallet import WELL_KNOWN_TOKENS
+        from ic_basilisk_toolkit.wallet import WELL_KNOWN_TOKENS
         ckbtc = WELL_KNOWN_TOKENS["ckBTC"]
         result = _exec(
             f"t = Token(name='test_ckBTC', ledger='{ckbtc['ledger']}', "
@@ -350,7 +350,7 @@ class TestTokenRegistry:
 
     def test_get_token_by_alias(self, wallet_reachable, wallet_canister, wallet_network):
         """Retrieve token by name alias."""
-        from ic_basilisk_os.wallet import WELL_KNOWN_TOKENS
+        from ic_basilisk_toolkit.wallet import WELL_KNOWN_TOKENS
         result = _exec(
             "t = Token['test_ckBTC']\n"
             "print(t.ledger if t else 'NOT_FOUND')",
@@ -371,7 +371,7 @@ class TestTokenRegistry:
 
     def test_register_second_token(self, wallet_reachable, wallet_canister, wallet_network):
         """Register a second token."""
-        from ic_basilisk_os.wallet import WELL_KNOWN_TOKENS
+        from ic_basilisk_toolkit.wallet import WELL_KNOWN_TOKENS
         cketh = WELL_KNOWN_TOKENS["ckETH"]
         result = _exec(
             f"t = Token(name='test_ckETH', ledger='{cketh['ledger']}', "

@@ -66,7 +66,7 @@ def _vetkey_name():
 
 def _local_canister_exec(code, canister, network):
     """Execute code on canister via dfx."""
-    from ic_basilisk_os.shell import _parse_candid
+    from ic_basilisk_toolkit.shell import _parse_candid
     escaped = code.replace('"', '\\"').replace("\n", "\\n")
     cmd = ["dfx", "canister", "call"]
     if network:
@@ -108,7 +108,7 @@ def _extract_task_id(output):
 
 def _task_magic(cmd, canister, network):
     """Run a magic command via dfx by converting it to code."""
-    from ic_basilisk_os.shell import (
+    from ic_basilisk_toolkit.shell import (
         _task_list_code, _task_create_code, _task_add_step_code,
         _task_info_code, _task_start_code, _task_stop_code,
         _task_delete_code, _task_log_code, _TASK_RESOLVE,
@@ -373,7 +373,7 @@ class TestUnitShellFlagParsing:
     """Unit tests for %vetkey shell command flag parsing."""
 
     def test_parse_no_flags(self):
-        from ic_basilisk_os.shell import _parse_vetkey_flags
+        from ic_basilisk_toolkit.shell import _parse_vetkey_flags
         cleaned, scope, input_text, key_name = _parse_vetkey_flags("pubkey")
         assert cleaned == "pubkey"
         assert scope is None
@@ -381,7 +381,7 @@ class TestUnitShellFlagParsing:
         assert key_name == "test_key_1"
 
     def test_parse_scope_flag(self):
-        from ic_basilisk_os.shell import _parse_vetkey_flags
+        from ic_basilisk_toolkit.shell import _parse_vetkey_flags
         cleaned, scope, input_text, key_name = _parse_vetkey_flags(
             "pubkey --scope my-custom-scope"
         )
@@ -390,7 +390,7 @@ class TestUnitShellFlagParsing:
         assert input_text == ""
 
     def test_parse_input_flag(self):
-        from ic_basilisk_os.shell import _parse_vetkey_flags
+        from ic_basilisk_toolkit.shell import _parse_vetkey_flags
         cleaned, scope, input_text, key_name = _parse_vetkey_flags(
             "derive abc123 --input document-42"
         )
@@ -399,7 +399,7 @@ class TestUnitShellFlagParsing:
         assert input_text == "document-42"
 
     def test_parse_key_flag(self):
-        from ic_basilisk_os.shell import _parse_vetkey_flags
+        from ic_basilisk_toolkit.shell import _parse_vetkey_flags
         cleaned, scope, input_text, key_name = _parse_vetkey_flags(
             "pubkey --key key_1"
         )
@@ -407,7 +407,7 @@ class TestUnitShellFlagParsing:
         assert "pubkey" in cleaned
 
     def test_parse_all_flags(self):
-        from ic_basilisk_os.shell import _parse_vetkey_flags
+        from ic_basilisk_toolkit.shell import _parse_vetkey_flags
         cleaned, scope, input_text, key_name = _parse_vetkey_flags(
             "derive aabbcc --scope admin --input doc-1 --key key_1"
         )
@@ -418,7 +418,7 @@ class TestUnitShellFlagParsing:
         assert "aabbcc" in cleaned
 
     def test_parse_flags_order_independent(self):
-        from ic_basilisk_os.shell import _parse_vetkey_flags
+        from ic_basilisk_toolkit.shell import _parse_vetkey_flags
         cleaned1, scope1, input1, key1 = _parse_vetkey_flags(
             "derive ff --key key_1 --scope x --input y"
         )
@@ -434,58 +434,58 @@ class TestUnitShellDispatch:
     """Unit tests for %vetkey shell command dispatch (help/usage paths)."""
 
     def test_handle_vetkey_no_args_shows_usage(self):
-        from ic_basilisk_os.shell import _handle_vetkey
+        from ic_basilisk_toolkit.shell import _handle_vetkey
         result = _handle_vetkey("", "dummy-canister", "ic")
         assert "Usage:" in result
         assert "pubkey" in result
         assert "derive" in result
 
     def test_handle_vetkey_help_shows_usage(self):
-        from ic_basilisk_os.shell import _handle_vetkey
+        from ic_basilisk_toolkit.shell import _handle_vetkey
         result = _handle_vetkey("help", "dummy-canister", "ic")
         assert "Usage:" in result
 
     def test_handle_vetkey_unknown_subcmd(self):
-        from ic_basilisk_os.shell import _handle_vetkey
+        from ic_basilisk_toolkit.shell import _handle_vetkey
         result = _handle_vetkey("foobar", "dummy-canister", "ic")
         assert "Unknown vetkey command: foobar" in result
 
     def test_handle_vetkey_derive_no_tpk(self):
         """derive without transport_public_key should show usage."""
-        from ic_basilisk_os.shell import _handle_vetkey
+        from ic_basilisk_toolkit.shell import _handle_vetkey
         result = _handle_vetkey("derive", "dummy-canister", "ic")
         assert "Usage:" in result
         assert "transport_public_key_hex" in result
 
     def test_handle_vetkey_derive_invalid_hex(self):
         """derive with invalid hex should return error."""
-        from ic_basilisk_os.shell import _handle_vetkey
+        from ic_basilisk_toolkit.shell import _handle_vetkey
         result = _handle_vetkey("derive ZZZZ_NOT_HEX", "dummy-canister", "ic")
         assert "[error]" in result
         assert "invalid transport public key hex" in result
 
 
 class TestUnitOSExports:
-    """Verify VetKeyService is exported from ic_basilisk_os."""
+    """Verify VetKeyService is exported from ic_basilisk_toolkit."""
 
     def test_vetkey_service_in_all(self):
-        import ic_basilisk_os
-        assert "VetKeyService" in ic_basilisk_os.__all__
+        import ic_basilisk_toolkit
+        assert "VetKeyService" in ic_basilisk_toolkit.__all__
 
 
 class TestUnitKeyConstants:
     """Verify the key name constants are defined."""
 
     def test_production_key(self):
-        from ic_basilisk_os.vetkeys import VETKD_KEY_PRODUCTION
+        from ic_basilisk_toolkit.vetkeys import VETKD_KEY_PRODUCTION
         assert VETKD_KEY_PRODUCTION == "key_1"
 
     def test_test_key(self):
-        from ic_basilisk_os.vetkeys import VETKD_KEY_TEST
+        from ic_basilisk_toolkit.vetkeys import VETKD_KEY_TEST
         assert VETKD_KEY_TEST == "test_key_1"
 
     def test_local_key(self):
-        from ic_basilisk_os.vetkeys import VETKD_KEY_LOCAL
+        from ic_basilisk_toolkit.vetkeys import VETKD_KEY_LOCAL
         assert VETKD_KEY_LOCAL == "dfx_test_key"
 
 
@@ -793,7 +793,7 @@ class TestUnitCycleCosts:
     def test_derive_key_cycle_cost_production(self):
         """Production key derivation should attach ~54B cycles."""
         # From the shell code — verify the constant is correct
-        from ic_basilisk_os.shell import _vetkey_derive
+        from ic_basilisk_toolkit.shell import _vetkey_derive
         import inspect
         source = inspect.getsource(_vetkey_derive)
         assert "54_000_000_000" in source, \
@@ -801,7 +801,7 @@ class TestUnitCycleCosts:
 
     def test_public_key_cycle_cost(self):
         """Public key call should attach ~26B cycles."""
-        from ic_basilisk_os.shell import _vetkey_pubkey
+        from ic_basilisk_toolkit.shell import _vetkey_pubkey
         import inspect
         source = inspect.getsource(_vetkey_pubkey)
         assert "26_000_000_000" in source, \

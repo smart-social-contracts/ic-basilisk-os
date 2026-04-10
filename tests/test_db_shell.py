@@ -19,7 +19,7 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from ic_basilisk_os.shell import (
+from ic_basilisk_toolkit.shell import (
     _handle_db,
     _handle_magic,
     _db_types_code,
@@ -288,7 +288,7 @@ class TestDbCreateShowDeleteLifecycle:
     def test_lifecycle_create_show_delete(self, canister, network):
         """Create a task, show it, then delete it."""
         # Create a task via direct code exec
-        from ic_basilisk_os.shell import _TASK_RESOLVE
+        from ic_basilisk_toolkit.shell import _TASK_RESOLVE
         create_result = exec_on_canister(
             _TASK_RESOLVE +
             "_t = Task(name='db_test_entity_xyz')\n"
@@ -339,7 +339,7 @@ class TestDbExportImport:
     def test_export_to_stdout(self, canister, network):
         """Export Task entities to stdout (JSON array)."""
         # Create a task to export
-        from ic_basilisk_os.shell import _TASK_RESOLVE
+        from ic_basilisk_toolkit.shell import _TASK_RESOLVE
         create_result = exec_on_canister(
             _TASK_RESOLVE +
             "_t = Task(name='export_test_xyz')\n"
@@ -361,7 +361,7 @@ class TestDbExportImport:
     @pytest.mark.usefixtures("_ensure_canister")
     def test_export_to_file(self, canister, network):
         """Export Task entities to a local file."""
-        from ic_basilisk_os.shell import _TASK_RESOLVE
+        from ic_basilisk_toolkit.shell import _TASK_RESOLVE
         create_result = exec_on_canister(
             _TASK_RESOLVE +
             "_t = Task(name='export_file_test_xyz')\n"
@@ -391,7 +391,7 @@ class TestDbExportImport:
     @pytest.mark.usefixtures("_ensure_canister")
     def test_export_import_roundtrip(self, canister, network):
         """Export, delete, re-import, verify entity is restored."""
-        from ic_basilisk_os.shell import _TASK_RESOLVE
+        from ic_basilisk_toolkit.shell import _TASK_RESOLVE
 
         # Create entity
         create_result = exec_on_canister(

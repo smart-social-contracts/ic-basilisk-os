@@ -36,43 +36,43 @@ class TestSFTPUtils:
     """Test SFTP utility functions."""
 
     def test_norm_absolute(self):
-        from ic_basilisk_os.sftp import _norm
+        from ic_basilisk_toolkit.sftp import _norm
         assert _norm("/foo/bar") == "/foo/bar"
 
     def test_norm_relative(self):
-        from ic_basilisk_os.sftp import _norm
+        from ic_basilisk_toolkit.sftp import _norm
         assert _norm("foo/bar") == "/foo/bar"
 
     def test_norm_dotdot(self):
-        from ic_basilisk_os.sftp import _norm
+        from ic_basilisk_toolkit.sftp import _norm
         assert _norm("/foo/bar/../baz") == "/foo/baz"
 
     def test_norm_dot(self):
-        from ic_basilisk_os.sftp import _norm
+        from ic_basilisk_toolkit.sftp import _norm
         assert _norm("/foo/./bar") == "/foo/bar"
 
     def test_norm_double_slash(self):
-        from ic_basilisk_os.sftp import _norm
+        from ic_basilisk_toolkit.sftp import _norm
         assert _norm("//foo///bar//") == "/foo/bar"
 
     def test_norm_root(self):
-        from ic_basilisk_os.sftp import _norm
+        from ic_basilisk_toolkit.sftp import _norm
         assert _norm("/") == "/"
 
     def test_norm_bytes(self):
-        from ic_basilisk_os.sftp import _norm
+        from ic_basilisk_toolkit.sftp import _norm
         assert _norm(b"/foo/bar") == "/foo/bar"
 
     def test_esc_single_quote(self):
-        from ic_basilisk_os.sftp import _esc
+        from ic_basilisk_toolkit.sftp import _esc
         assert _esc("it's") == "it\\'s"
 
     def test_esc_backslash(self):
-        from ic_basilisk_os.sftp import _esc
+        from ic_basilisk_toolkit.sftp import _esc
         assert _esc("a\\b") == "a\\\\b"
 
     def test_indent(self):
-        from ic_basilisk_os.sftp import _indent
+        from ic_basilisk_toolkit.sftp import _indent
         result = _indent("line1\nline2", 4)
         assert result == "    line1\n    line2"
 

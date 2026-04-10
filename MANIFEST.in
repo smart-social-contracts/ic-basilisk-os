@@ -3,4 +3,4 @@ include README.md
 include requirements-dev.txt
 include pyproject.toml
 include setup.cfg
-include ic_basilisk_os/py.typed
+include ic_basilisk_toolkit/py.typed

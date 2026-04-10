@@ -38,7 +38,7 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from ic_basilisk_os.shell import _parse_candid
+from ic_basilisk_toolkit.shell import _parse_candid
 
 # Directory containing dfx.json with local network config
 _TEST_CANISTER_DIR = os.path.join(os.path.dirname(__file__), "test_canister")
@@ -207,7 +207,7 @@ def _extract_task_id(output):
 
 def _magic_to_code(cmd):
     """Convert a %task magic command to executable Python code."""
-    from ic_basilisk_os.shell import (
+    from ic_basilisk_toolkit.shell import (
         _task_list_code, _task_create_code, _task_add_step_code, _task_info_code,
         _task_start_code, _task_stop_code, _task_delete_code, _task_log_code,
     )
@@ -240,7 +240,7 @@ def _magic_to_code(cmd):
     elif sub == "delete":
         return _task_delete_code(rest.strip())
     elif sub == "run":
-        from ic_basilisk_os.shell import _task_run_code
+        from ic_basilisk_toolkit.shell import _task_run_code
         return _task_run_code(rest.strip())
     else:
         raise ValueError(f"Unknown %task subcommand: {sub}")
@@ -1391,7 +1391,7 @@ class TestFXCleanup:
 
 def _fx_magic(cmd, canister, network):
     """Run a %fx magic command via generated code on the canister."""
-    from ic_basilisk_os.shell import (
+    from ic_basilisk_toolkit.shell import (
         _fx_list_code, _fx_register_code, _fx_unregister_code,
         _fx_rate_code, _fx_info_code, _CRYPTO_SYMBOLS, _FIAT_SYMBOLS,
     )

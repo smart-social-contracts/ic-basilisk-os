@@ -4,14 +4,14 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(
-    name="ic_basilisk_os",
+    name="ic_basilisk_toolkit",
     version="0.1.0",
     author="Smart Social Contracts",
     author_email="contact@smartsocialcontracts.org",
     description="Basilisk OS — Operating system services, shell, and SFTP for IC Python canisters",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/smart-social-contracts/ic-basilisk-os",
+    url="https://github.com/smart-social-contracts/ic-basilisk-toolkit",
     packages=find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3.10",
@@ -28,7 +28,7 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "basilisk-os=ic_basilisk_os.cli:main",
+            "basilisk-toolkit=ic_basilisk_toolkit.cli:main",
         ],
     },
 )

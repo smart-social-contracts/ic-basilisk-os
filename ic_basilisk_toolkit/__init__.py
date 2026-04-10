@@ -1,7 +1,7 @@
 """
-Basilisk OS — Operating system services for IC canisters.
+Basilisk Toolkit — Services and tools for IC Python canisters.
 
-Provides POSIX-like abstractions on top of the Basilisk CDK:
+Provides ready-made abstractions on top of the Basilisk CDK:
 
   - Task/process management (Task, TaskStep, TaskSchedule, TaskManager)
   - Wallet (ICRC-1 token registry, transfers, balance tracking)

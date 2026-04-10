@@ -1,0 +1,122 @@
+# IC Tests — Basilisk Toolkit features against a live canister on IC mainnet.
+# Tests tasks, wallet, crypto, fx, vetkeys, shell magic commands, database, etc.
+# The canister must already be deployed with ic-python-db bundled.
+
+name: IC Tests
+
+env:
+    PYTHON_VERSION: "3.13"
+    DFX_VERSION: "0.30.2"
+
+concurrency:
+    group: toolkit-ic-tests-mainnet
+    cancel-in-progress: true
+
+on:
+    pull_request:
+    workflow_call:
+    workflow_dispatch:
+        inputs:
+            test_filter:
+                description: "Pytest filter (-k expression), leave empty to run all"
+                required: false
+                type: string
+                default: ""
+            canister:
+                description: "Canister ID to test against"
+                required: false
+                type: string
+                default: "ru4ga-siaaa-aaaai-q7f3a-cai"
+            network:
+                description: "IC network"
+                required: false
+                type: choice
+                default: ic
+                options:
+                    - ic
+                    - local
+
+jobs:
+    ic-tests:
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    - shard: tasks-1
+                      pytest_args: >-
+                          tests/test_tasks.py -k
+                          "TaskList or TaskCreate or TaskInfo or TaskLog
+                          or TaskLifecycle or TaskDelete or ShortcutAliases
+                          or TaskUsage or TaskEntities"
+                    - shard: tasks-2
+                      pytest_args: >-
+                          tests/test_tasks.py -k
+                          "TaskExecution or TaskTimerExecution"
+                    - shard: tasks-3
+                      pytest_args: >-
+                          tests/test_tasks.py -k
+                          "TaskNameLookup or TaskCreateFile or TaskTimestamps
+                          or TaskLogFeatures or TaskAddStep"
+                    - shard: tasks-4
+                      pytest_args: >-
+                          tests/test_tasks.py -k
+                          "MultiStepExecution or Wget or TaskRetryResume
+                          or E2EWriteAndRun or E2EDownloadAndRun
+                          or PersistentFileStorage or UsageStrings"
+                    - shard: shell-db
+                      pytest_args: tests/test_db_shell.py tests/test_shell.py
+                    - shard: fx
+                      pytest_args: tests/test_fx.py
+                    - shard: vetkeys-wallet
+                      pytest_args: >-
+                          tests/test_vetkeys.py tests/test_wallet.py
+                          tests/test_wallet_shell.py tests/test_wallet_hook.py
+                    - shard: crypto
+                      pytest_args: tests/test_crypto.py
+                    - shard: guards
+                      pytest_args: tests/test_guards.py
+        env:
+            DFX_WARNING: -mainnet_plaintext_identity
+            BASILISK_TEST_CANISTER: ${{ inputs.canister || 'ru4ga-siaaa-aaaai-q7f3a-cai' }}
+            BASILISK_TEST_NETWORK: ${{ inputs.network || 'ic' }}
+        name: ic-tests (${{ matrix.shard }})
+        timeout-minutes: 20
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Install dfx
+              run: |
+                  DFXVM_INIT_YES=true DFX_VERSION=${{ env.DFX_VERSION }} sh -ci "$(curl -fsSL https://sdk.dfinity.org/install.sh)"
+                  echo "$HOME/.local/share/dfx/bin" >> $GITHUB_PATH
+
+            - name: Import DFX identity
+              run: |
+                  if [ -z "${{ secrets.IC_IDENTITY_PEM }}" ]; then
+                    echo "::error::IC_IDENTITY_PEM secret is not set."
+                    exit 1
+                  fi
+                  echo "${{ secrets.IC_IDENTITY_PEM }}" > /tmp/ci-identity.pem
+                  dfx identity import ci-deploy /tmp/ci-identity.pem --storage-mode plaintext 2>/dev/null || true
+                  rm /tmp/ci-identity.pem
+                  dfx identity use ci-deploy
+
+            - name: Set up Python
+              uses: actions/setup-python@v5
+              with:
+                  python-version: ${{ env.PYTHON_VERSION }}
+
+            - name: Install dependencies
+              run: |
+                  pip install ic-basilisk
+                  pip install -e .
+                  pip install pytest asyncssh
+
+            - name: Run tests (${{ matrix.shard }})
+              run: |
+                  FILTER="${{ inputs.test_filter }}"
+                  if [ -n "$FILTER" ]; then
+                    PYTHONPATH=. python -m pytest tests/ -v -k "$FILTER" --ignore=tests/test_canister
+                  else
+                    PYTHONPATH=. python -m pytest ${{ matrix.pytest_args }} -v
+                  fi

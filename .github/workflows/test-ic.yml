@@ -116,7 +116,7 @@ jobs:
               run: |
                   FILTER="${{ inputs.test_filter }}"
                   if [ -n "$FILTER" ]; then
-                    PYTHONPATH=. python -m pytest tests/ -v -k "$FILTER" --ignore=tests/test_canister
+                    PYTHONPATH=. python -m pytest tests/ -v -k "$FILTER" --ignore=tests/test_canister -o "addopts="
                   else
-                    PYTHONPATH=. python -m pytest ${{ matrix.pytest_args }} -v
+                    PYTHONPATH=. python -m pytest ${{ matrix.pytest_args }} -v -o "addopts="
                   fi

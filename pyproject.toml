@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ic_basilisk_os"
+version = "0.1.0"
+description = "Basilisk OS — Operating system services, shell, and SFTP for IC Python canisters"
+readme = "README.md"
+authors = [
+    { name = "Smart Social Contracts", email = "contact@smartsocialcontracts.org" }
+]
+license = { file = "LICENSE" }
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Operating System",
+]
+keywords = ["internet-computer", "icp", "canister", "basilisk", "os", "shell", "sftp"]
+requires-python = ">=3.10"
+dependencies = [
+    "ic-basilisk>=0.11.0",
+    "ic-python-db>=0.7.7",
+    "ic-python-logging>=0.3.1",
+]
+
+[project.optional-dependencies]
+shell = ["asyncssh"]
+test = ["pytest>=7.0.0", "pytest-cov>=4.0.0"]
+
+[project.scripts]
+basilisk-os = "ic_basilisk_os.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/smart-social-contracts/ic-basilisk-os"
+Repository = "https://github.com/smart-social-contracts/ic-basilisk-os.git"
+Issues = "https://github.com/smart-social-contracts/ic-basilisk-os/issues"
+
+[tool.setuptools]
+packages = ["ic_basilisk_os"]

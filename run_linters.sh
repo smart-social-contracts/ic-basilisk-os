@@ -1,0 +1,58 @@
+#!/bin/bash
+# Simple script to run all linters from CI workflow locally
+# Usage: ./run_linters.sh [--fix]
+#   --fix    Apply fixes automatically when possible (black, isort)
+
+# Exit on first error
+set -e
+
+# Check if required linting tools are installed
+check_command() {
+    if ! command -v $1 &> /dev/null; then
+        echo "Error: $1 is not installed or not in PATH"
+        echo "Install it with: pip install $1"
+        exit 1
+    fi
+}
+
+check_command black
+check_command isort
+check_command flake8
+check_command mypy
+
+# Check if we should fix issues or just check
+FIX_MODE=false
+if [ "$1" == "--fix" ]; then
+    FIX_MODE=true
+    echo "Running linters in FIX mode..."
+else
+    echo "Running linters in CHECK mode (use --fix to auto-format)..."
+fi
+
+# Check/fix formatting with black
+echo "Running black..."
+if [ "$FIX_MODE" = true ]; then
+    black ic_basilisk_os tests
+else
+    black ic_basilisk_os tests --check
+fi
+
+# Check/fix imports with isort
+echo "Running isort..."
+if [ "$FIX_MODE" = true ]; then
+    isort ic_basilisk_os tests
+else
+    isort ic_basilisk_os tests --check-only
+fi
+
+# Lint with flake8 (no auto-fix available)
+echo "Running flake8..."
+# Using configuration from setup.cfg
+flake8 ic_basilisk_os tests --exclude=tests/venv,tests/.basilisk,*/.basilisk/*,*/__pycache__/*
+
+# Type check with mypy (no auto-fix available)
+echo "Running mypy..."
+# Using configuration from setup.cfg
+mypy ic_basilisk_os tests
+
+echo "All linters completed successfully!"

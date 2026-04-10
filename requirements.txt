@@ -1,0 +1,3 @@
+ic-basilisk @ git+https://github.com/smart-social-contracts/basilisk.git@main
+ic-python-db @ git+https://github.com/smart-social-contracts/ic-python-db.git@main
+ic-python-logging @ git+https://github.com/smart-social-contracts/ic-python-logging.git@main

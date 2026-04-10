@@ -56,20 +56,30 @@ __all__ = [
 # These imports will only work inside a canister (they depend on ic-python-db).
 # When used client-side (e.g. in tests), import individual modules directly.
 try:
-    from .status import TaskStatus, TaskExecutionStatus
-    from .entities import (
-        Codex, Call, Task, TaskStep, TaskSchedule, TaskExecution,
-        Token, WalletBalance, WalletTransfer,
-        FXPair,
-    )
-    from .wallet import Wallet
-    from .fx import FXService
-    from .vetkeys import VetKeyService
     from .crypto import (
-        KeyEnvelope, CryptoGroup, CryptoGroupMember,
-        CryptoService, EncryptedString,
+        CryptoGroup,
+        CryptoGroupMember,
+        CryptoService,
+        EncryptedString,
+        KeyEnvelope,
     )
+    from .entities import (
+        Call,
+        Codex,
+        FXPair,
+        Task,
+        TaskExecution,
+        TaskSchedule,
+        TaskStep,
+        Token,
+        WalletBalance,
+        WalletTransfer,
+    )
+    from .execution import create_task_entity_class, run_code
+    from .fx import FXService
+    from .status import TaskExecutionStatus, TaskStatus
     from .task_manager import TaskManager
-    from .execution import run_code, create_task_entity_class
+    from .vetkeys import VetKeyService
+    from .wallet import Wallet
 except ImportError:
     pass

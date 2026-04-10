@@ -17,40 +17,42 @@ import pytest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from ic_basilisk_toolkit.shell import (
-    _handle_magic,
-    _handle_group,
-    _handle_crypto,
-    _group_list_code,
-    _group_create_code,
-    _group_delete_code,
-    _group_members_code,
-    _group_add_code,
-    _group_remove_code,
-    _crypto_status_code,
-    _crypto_scopes_code,
+    _CRYPTO_USAGE,
+    _GROUP_USAGE,
+    _crypto_decrypt_file_code,
+    _crypto_decrypt_text_code,
+    _crypto_encrypt_file_code,
+    _crypto_encrypt_text_code,
     _crypto_envelopes_code,
     _crypto_init_code,
-    _crypto_share_principal_code,
-    _crypto_share_group_code,
-    _crypto_revoke_principal_code,
     _crypto_revoke_group_code,
-    _crypto_encrypt_file_code,
-    _crypto_decrypt_file_code,
-    _crypto_encrypt_text_code,
-    _crypto_decrypt_text_code,
-    _GROUP_USAGE,
-    _CRYPTO_USAGE,
+    _crypto_revoke_principal_code,
+    _crypto_scopes_code,
+    _crypto_share_group_code,
+    _crypto_share_principal_code,
+    _crypto_status_code,
+    _group_add_code,
+    _group_create_code,
+    _group_delete_code,
+    _group_list_code,
+    _group_members_code,
+    _group_remove_code,
+    _handle_crypto,
+    _handle_group,
+    _handle_magic,
     canister_exec,
 )
+
 try:
     from ic_basilisk_toolkit.crypto import (
-        encode_envelope,
+        decode_ciphertext,
         decode_envelope,
         encode_ciphertext,
-        decode_ciphertext,
+        encode_envelope,
         is_encrypted,
         is_envelope,
     )
+
     _HAS_CRYPTO = True
 except (ImportError, ModuleNotFoundError):
     _HAS_CRYPTO = False
@@ -84,6 +86,7 @@ _CRYPTO_RESOLVE = (
 # ===========================================================================
 # Pure unit tests — no canister needed
 # ===========================================================================
+
 
 @_skip_no_crypto
 class TestFormatHelpers:
@@ -441,14 +444,23 @@ class TestUsageMessages:
             assert subcmd in _GROUP_USAGE, f"Missing subcommand: {subcmd}"
 
     def test_crypto_usage_subcommands(self):
-        for subcmd in ["status", "scopes", "encrypt", "decrypt",
-                        "share", "revoke", "envelopes", "init"]:
+        for subcmd in [
+            "status",
+            "scopes",
+            "encrypt",
+            "decrypt",
+            "share",
+            "revoke",
+            "envelopes",
+            "init",
+        ]:
             assert subcmd in _CRYPTO_USAGE, f"Missing subcommand: {subcmd}"
 
 
 # ===========================================================================
 # Integration tests — require a live canister
 # ===========================================================================
+
 
 @pytest.fixture(scope="module")
 def _ensure_canister(canister_reachable):
@@ -465,19 +477,22 @@ def _resolve_crypto(_ensure_canister):
     """
     # First, probe whether the module is available at all.
     probe = exec_on_canister(
-        "from basilisk.os.crypto import KeyEnvelope\n"
-        "print('crypto_available')\n"
+        "from basilisk.os.crypto import KeyEnvelope\n" "print('crypto_available')\n"
     )
-    if "ImportError" in probe or "cannot import" in probe or "crypto_available" not in probe:
+    if (
+        "ImportError" in probe
+        or "cannot import" in probe
+        or "crypto_available" not in probe
+    ):
         pytest.skip(
             "Canister does not have basilisk.os.crypto yet — "
             "redeploy canister with updated code first"
         )
     # Now do the full resolve (with try/except for safety on the canister side).
-    result = exec_on_canister(
-        _CRYPTO_RESOLVE + "print('crypto_entities_ready')"
-    )
-    assert "crypto_entities_ready" in result, f"Failed to resolve crypto entities: {result}"
+    result = exec_on_canister(_CRYPTO_RESOLVE + "print('crypto_entities_ready')")
+    assert (
+        "crypto_entities_ready" in result
+    ), f"Failed to resolve crypto entities: {result}"
     return True
 
 
@@ -491,8 +506,7 @@ _TEST_PREFIX = "_test_crypto_"
 def _cleanup_groups(prefix=_TEST_PREFIX):
     """Delete all CryptoGroups and CryptoGroupMembers matching prefix."""
     exec_on_canister(
-        _CRYPTO_RESOLVE +
-        f"_prefix = '{prefix}'\n"
+        _CRYPTO_RESOLVE + f"_prefix = '{prefix}'\n"
         "for _m in list(CryptoGroupMember.instances()):\n"
         "    if str(_m.group).startswith(_prefix):\n"
         "        _m.delete()\n"
@@ -506,8 +520,7 @@ def _cleanup_groups(prefix=_TEST_PREFIX):
 def _cleanup_envelopes(prefix=_TEST_PREFIX):
     """Delete all KeyEnvelopes with scope matching prefix."""
     exec_on_canister(
-        _CRYPTO_RESOLVE +
-        f"_prefix = '{prefix}'\n"
+        _CRYPTO_RESOLVE + f"_prefix = '{prefix}'\n"
         "for _e in list(KeyEnvelope.instances()):\n"
         "    if str(_e.scope).startswith(_prefix):\n"
         "        _e.delete()\n"
@@ -524,6 +537,7 @@ def _cleanup_all(prefix=_TEST_PREFIX):
 # ===========================================================================
 # %group integration tests
 # ===========================================================================
+
 
 class TestGroupList:
     """Test %group list on live canister."""
@@ -690,6 +704,7 @@ class TestGroupMembers:
 # %crypto integration tests
 # ===========================================================================
 
+
 class TestCryptoStatus:
     """Test %crypto status on live canister."""
 
@@ -849,7 +864,9 @@ class TestCryptoShareGroup:
         scope = f"{_TEST_PREFIX}share_nogrp"
         try:
             magic_on_canister(f"%crypto init --scope {scope}")
-            result = magic_on_canister(f"%crypto share {scope} --with-group {_TEST_PREFIX}nogroup_xyz")
+            result = magic_on_canister(
+                f"%crypto share {scope} --with-group {_TEST_PREFIX}nogroup_xyz"
+            )
             assert "not found" in result
         finally:
             _cleanup_all()
@@ -902,8 +919,7 @@ class TestCryptoEncryptDecryptFile:
 
             # Verify it's encrypted
             cat_result = exec_on_canister(
-                f"with open('{path}', 'r') as f:\n"
-                f"    print(f.read())\n"
+                f"with open('{path}', 'r') as f:\n" f"    print(f.read())\n"
             )
             assert cat_result.startswith("enc:v=2:")
 
@@ -913,8 +929,7 @@ class TestCryptoEncryptDecryptFile:
 
             # Verify contents restored
             cat_after = exec_on_canister(
-                f"with open('{path}', 'r') as f:\n"
-                f"    print(f.read())\n"
+                f"with open('{path}', 'r') as f:\n" f"    print(f.read())\n"
             )
             assert cat_after == content
         finally:
@@ -1024,6 +1039,7 @@ class TestCryptoGroupRemoveRevokesEnvelopes:
 # Full end-to-end lifecycle
 # ===========================================================================
 
+
 class TestCryptoE2ELifecycle:
     """
     Full end-to-end test: create group, add members, init scope,
@@ -1082,8 +1098,7 @@ class TestCryptoE2ELifecycle:
 
             # 8. Verify file is encrypted
             cat = exec_on_canister(
-                f"with open('{filepath}', 'r') as f:\n"
-                f"    print(f.read())\n"
+                f"with open('{filepath}', 'r') as f:\n" f"    print(f.read())\n"
             )
             assert cat.startswith("enc:v=2:")
 
@@ -1093,8 +1108,7 @@ class TestCryptoE2ELifecycle:
 
             # 10. Verify original content
             cat = exec_on_canister(
-                f"with open('{filepath}', 'r') as f:\n"
-                f"    print(f.read())\n"
+                f"with open('{filepath}', 'r') as f:\n" f"    print(f.read())\n"
             )
             assert cat == content
 
@@ -1138,8 +1152,7 @@ class TestCryptoFormatHelpersOnCanister:
     @pytest.mark.usefixtures("_resolve_crypto")
     def test_encode_decode_envelope_on_canister(self):
         result = exec_on_canister(
-            _CRYPTO_RESOLVE +
-            "_env = encode_envelope('deadbeef1234')\n"
+            _CRYPTO_RESOLVE + "_env = encode_envelope('deadbeef1234')\n"
             "_decoded = decode_envelope(_env)\n"
             "print(f'{_env}|{_decoded}')\n"
         )
@@ -1150,8 +1163,7 @@ class TestCryptoFormatHelpersOnCanister:
     @pytest.mark.usefixtures("_resolve_crypto")
     def test_encode_decode_ciphertext_on_canister(self):
         result = exec_on_canister(
-            _CRYPTO_RESOLVE +
-            "_ct = encode_ciphertext('aabbccdd', '11223344')\n"
+            _CRYPTO_RESOLVE + "_ct = encode_ciphertext('aabbccdd', '11223344')\n"
             "_iv, _data = decode_ciphertext(_ct)\n"
             "print(f'{_ct}|{_iv}|{_data}')\n"
         )
@@ -1163,8 +1175,7 @@ class TestCryptoFormatHelpersOnCanister:
     @pytest.mark.usefixtures("_resolve_crypto")
     def test_is_encrypted_on_canister(self):
         result = exec_on_canister(
-            _CRYPTO_RESOLVE +
-            "print(is_encrypted('enc:v=2:iv=aa:d=bb'))\n"
+            _CRYPTO_RESOLVE + "print(is_encrypted('enc:v=2:iv=aa:d=bb'))\n"
             "print(is_encrypted('plaintext'))\n"
             "print(is_encrypted(''))\n"
         )
@@ -1176,8 +1187,7 @@ class TestCryptoFormatHelpersOnCanister:
     @pytest.mark.usefixtures("_resolve_crypto")
     def test_is_envelope_on_canister(self):
         result = exec_on_canister(
-            _CRYPTO_RESOLVE +
-            "print(is_envelope('env:v=2:k=dead'))\n"
+            _CRYPTO_RESOLVE + "print(is_envelope('env:v=2:k=dead'))\n"
             "print(is_envelope('plaintext'))\n"
         )
         lines = result.strip().split("\n")
@@ -1193,8 +1203,8 @@ class TestCryptoEntityCRUDOnCanister:
         name = f"{_TEST_PREFIX}entity_grp"
         try:
             result = exec_on_canister(
-                _CRYPTO_RESOLVE +
-                f"_g = CryptoGroup(name='{name}', description='Entity test')\n"
+                _CRYPTO_RESOLVE
+                + f"_g = CryptoGroup(name='{name}', description='Entity test')\n"
                 f"_loaded = CryptoGroup['{name}']\n"
                 "print(f'{_loaded.name}|{_loaded.description}')\n"
             )
@@ -1210,14 +1220,13 @@ class TestCryptoEntityCRUDOnCanister:
         princ = "entity-test-principal"
         try:
             exec_on_canister(
-                _CRYPTO_RESOLVE +
-                f"CryptoGroup(name='{group}', description='test')\n"
+                _CRYPTO_RESOLVE + f"CryptoGroup(name='{group}', description='test')\n"
                 f"CryptoGroupMember(group='{group}', principal='{princ}', role='member')\n"
                 "print('created')\n"
             )
             result = exec_on_canister(
-                _CRYPTO_RESOLVE +
-                f"_members = [m for m in CryptoGroupMember.instances() if str(m.group) == '{group}']\n"
+                _CRYPTO_RESOLVE
+                + f"_members = [m for m in CryptoGroupMember.instances() if str(m.group) == '{group}']\n"
                 "print(f'{len(_members)}|{_members[0].principal}|{_members[0].role}')\n"
             )
             parts = result.split("|")
@@ -1233,8 +1242,8 @@ class TestCryptoEntityCRUDOnCanister:
         princ = "envelope-test-principal"
         try:
             result = exec_on_canister(
-                _CRYPTO_RESOLVE +
-                f"_e = KeyEnvelope(scope='{scope}', principal='{princ}', wrapped_dek=encode_envelope('cafebabe'))\n"
+                _CRYPTO_RESOLVE
+                + f"_e = KeyEnvelope(scope='{scope}', principal='{princ}', wrapped_dek=encode_envelope('cafebabe'))\n"
                 f"_found = [e for e in KeyEnvelope.instances() if str(e.scope) == '{scope}']\n"
                 "print(f'{len(_found)}|{_found[0].principal}|{_found[0].wrapped_dek}')\n"
             )
@@ -1251,13 +1260,13 @@ class TestCryptoEntityCRUDOnCanister:
         princ = "delete-test-principal"
         try:
             exec_on_canister(
-                _CRYPTO_RESOLVE +
-                f"KeyEnvelope(scope='{scope}', principal='{princ}', wrapped_dek=encode_envelope('1234'))\n"
+                _CRYPTO_RESOLVE
+                + f"KeyEnvelope(scope='{scope}', principal='{princ}', wrapped_dek=encode_envelope('1234'))\n"
                 "print('created')\n"
             )
             result = exec_on_canister(
-                _CRYPTO_RESOLVE +
-                f"_found = [e for e in KeyEnvelope.instances() if str(e.scope) == '{scope}']\n"
+                _CRYPTO_RESOLVE
+                + f"_found = [e for e in KeyEnvelope.instances() if str(e.scope) == '{scope}']\n"
                 "for _e in _found:\n"
                 "    _e.delete()\n"
                 f"_after = [e for e in KeyEnvelope.instances() if str(e.scope) == '{scope}']\n"

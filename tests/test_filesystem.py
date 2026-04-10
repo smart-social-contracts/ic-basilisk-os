@@ -25,6 +25,7 @@ def _unique(prefix="test"):
 # Basic file operations
 # ===========================================================================
 
+
 class TestFileCreateReadDelete:
     """Test core file lifecycle: create, read, verify, delete."""
 
@@ -33,12 +34,14 @@ class TestFileCreateReadDelete:
         # Write
         exec_on_canister(
             f"with open('{path}', 'w') as f: f.write('hello world')",
-            canister, network,
+            canister,
+            network,
         )
         # Read
         result = exec_on_canister(
             f"with open('{path}', 'r') as f: print(f.read())",
-            canister, network,
+            canister,
+            network,
         )
         assert result == "hello world"
 
@@ -47,17 +50,20 @@ class TestFileCreateReadDelete:
         path = _unique("binfile")
         # Write binary via base64 (null bytes can't go through Candid text)
         import base64
-        data = b'\x00\x01\x02\xff'
+
+        data = b"\x00\x01\x02\xff"
         b64 = base64.b64encode(data).decode()
         exec_on_canister(
             f"import base64\n"
             f"with open('{path}', 'wb') as f:\n"
             f"    f.write(base64.b64decode('{b64}'))",
-            canister, network,
+            canister,
+            network,
         )
         result = exec_on_canister(
             f"with open('{path}', 'rb') as f: print(list(f.read()))",
-            canister, network,
+            canister,
+            network,
         )
         assert result == "[0, 1, 2, 255]"
 
@@ -65,15 +71,18 @@ class TestFileCreateReadDelete:
         path = _unique("overwrite")
         exec_on_canister(
             f"with open('{path}', 'w') as f: f.write('first')",
-            canister, network,
+            canister,
+            network,
         )
         exec_on_canister(
             f"with open('{path}', 'w') as f: f.write('second')",
-            canister, network,
+            canister,
+            network,
         )
         result = exec_on_canister(
             f"with open('{path}', 'r') as f: print(f.read())",
-            canister, network,
+            canister,
+            network,
         )
         assert result == "second"
 
@@ -81,15 +90,18 @@ class TestFileCreateReadDelete:
         path = _unique("append")
         exec_on_canister(
             f"with open('{path}', 'w') as f: f.write('hello')",
-            canister, network,
+            canister,
+            network,
         )
         exec_on_canister(
             f"with open('{path}', 'a') as f: f.write(' world')",
-            canister, network,
+            canister,
+            network,
         )
         result = exec_on_canister(
             f"with open('{path}', 'r') as f: print(f.read())",
-            canister, network,
+            canister,
+            network,
         )
         assert result == "hello world"
 
@@ -97,12 +109,14 @@ class TestFileCreateReadDelete:
         path = _unique("delfile")
         exec_on_canister(
             f"with open('{path}', 'w') as f: f.write('temp')",
-            canister, network,
+            canister,
+            network,
         )
         exec_on_canister(f"import os; os.remove('{path}')", canister, network)
         result = exec_on_canister(
             f"import os; print(os.path.exists('{path}'))",
-            canister, network,
+            canister,
+            network,
         )
         assert result == "False"
 
@@ -112,7 +126,8 @@ class TestFileCreateReadDelete:
             "    open('/nonexistent_file_xyz', 'r')\n"
             "except FileNotFoundError as e:\n"
             "    print('FileNotFoundError')\n",
-            canister, network,
+            canister,
+            network,
         )
         assert "FileNotFoundError" in result
 
@@ -120,11 +135,13 @@ class TestFileCreateReadDelete:
         path = _unique("empty")
         exec_on_canister(
             f"with open('{path}', 'w') as f: pass",
-            canister, network,
+            canister,
+            network,
         )
         result = exec_on_canister(
             f"with open('{path}', 'r') as f: print(repr(f.read()))",
-            canister, network,
+            canister,
+            network,
         )
         assert result == "''"
 
@@ -133,11 +150,13 @@ class TestFileCreateReadDelete:
         path = _unique("largefile")
         exec_on_canister(
             f"with open('{path}', 'w') as f: f.write('X' * 10000)",
-            canister, network,
+            canister,
+            network,
         )
         result = exec_on_canister(
             f"with open('{path}', 'r') as f: print(len(f.read()))",
-            canister, network,
+            canister,
+            network,
         )
         assert result == "10000"
 
@@ -145,6 +164,7 @@ class TestFileCreateReadDelete:
 # ===========================================================================
 # Directory operations
 # ===========================================================================
+
 
 class TestDirectoryOps:
     """Test directory creation, listing, and removal."""
@@ -154,7 +174,8 @@ class TestDirectoryOps:
         exec_on_canister(f"import os; os.makedirs('{dirname}')", canister, network)
         result = exec_on_canister(
             f"import os; print(os.path.isdir('{dirname}'))",
-            canister, network,
+            canister,
+            network,
         )
         assert result == "True"
 
@@ -163,11 +184,13 @@ class TestDirectoryOps:
         deep = f"{base}/a/b/c"
         exec_on_canister(
             f"import os; os.makedirs('{deep}', exist_ok=True)",
-            canister, network,
+            canister,
+            network,
         )
         result = exec_on_canister(
             f"import os; print(os.path.isdir('{deep}'))",
-            canister, network,
+            canister,
+            network,
         )
         assert result == "True"
 
@@ -176,15 +199,18 @@ class TestDirectoryOps:
         exec_on_canister(f"import os; os.makedirs('{base}')", canister, network)
         exec_on_canister(
             f"with open('{base}/file1.txt', 'w') as f: f.write('a')",
-            canister, network,
+            canister,
+            network,
         )
         exec_on_canister(
             f"with open('{base}/file2.txt', 'w') as f: f.write('b')",
-            canister, network,
+            canister,
+            network,
         )
         result = exec_on_canister(
             f"import os; print(sorted(os.listdir('{base}')))",
-            canister, network,
+            canister,
+            network,
         )
         assert "file1.txt" in result
         assert "file2.txt" in result
@@ -194,7 +220,8 @@ class TestDirectoryOps:
         exec_on_canister(f"import os; os.makedirs('{base}')", canister, network)
         result = exec_on_canister(
             f"import os; print(os.listdir('{base}'))",
-            canister, network,
+            canister,
+            network,
         )
         assert result == "[]"
 
@@ -204,7 +231,8 @@ class TestDirectoryOps:
             "    import os; os.listdir('/nonexistent_dir_xyz')\n"
             "except FileNotFoundError:\n"
             "    print('FileNotFoundError')\n",
-            canister, network,
+            canister,
+            network,
         )
         assert "FileNotFoundError" in result
 
@@ -214,7 +242,8 @@ class TestDirectoryOps:
         exec_on_canister(f"import os; os.rmdir('{dirname}')", canister, network)
         result = exec_on_canister(
             f"import os; print(os.path.isdir('{dirname}'))",
-            canister, network,
+            canister,
+            network,
         )
         assert result == "False"
 
@@ -223,6 +252,7 @@ class TestDirectoryOps:
 # os.path operations
 # ===========================================================================
 
+
 class TestOsPath:
     """Test os.path functions on canister memfs."""
 
@@ -230,11 +260,13 @@ class TestOsPath:
         path = _unique("existsfile")
         exec_on_canister(
             f"with open('{path}', 'w') as f: f.write('x')",
-            canister, network,
+            canister,
+            network,
         )
         result = exec_on_canister(
             f"import os; print(os.path.exists('{path}'))",
-            canister, network,
+            canister,
+            network,
         )
         assert result == "True"
 
@@ -243,7 +275,8 @@ class TestOsPath:
         exec_on_canister(f"import os; os.makedirs('{path}')", canister, network)
         result = exec_on_canister(
             f"import os; print(os.path.exists('{path}'))",
-            canister, network,
+            canister,
+            network,
         )
         assert result == "True"
 
@@ -251,11 +284,13 @@ class TestOsPath:
         path = _unique("isfile")
         exec_on_canister(
             f"with open('{path}', 'w') as f: f.write('x')",
-            canister, network,
+            canister,
+            network,
         )
         result = exec_on_canister(
             f"import os; print(os.path.isfile('{path}'))",
-            canister, network,
+            canister,
+            network,
         )
         assert result == "True"
 
@@ -264,7 +299,8 @@ class TestOsPath:
         exec_on_canister(f"import os; os.makedirs('{path}')", canister, network)
         result = exec_on_canister(
             f"import os; print(os.path.isdir('{path}'))",
-            canister, network,
+            canister,
+            network,
         )
         assert result == "True"
 
@@ -272,11 +308,13 @@ class TestOsPath:
         path = _unique("sizefile")
         exec_on_canister(
             f"with open('{path}', 'w') as f: f.write('12345')",
-            canister, network,
+            canister,
+            network,
         )
         result = exec_on_canister(
             f"import os; print(os.path.getsize('{path}'))",
-            canister, network,
+            canister,
+            network,
         )
         assert result == "5"
 
@@ -284,11 +322,13 @@ class TestOsPath:
         path = _unique("statfile")
         exec_on_canister(
             f"with open('{path}', 'w') as f: f.write('data')",
-            canister, network,
+            canister,
+            network,
         )
         result = exec_on_canister(
             f"import os\ns = os.stat('{path}')\nprint(s.st_size, s.st_mode)",
-            canister, network,
+            canister,
+            network,
         )
         assert "4" in result  # size = 4 bytes
 
@@ -297,6 +337,7 @@ class TestOsPath:
 # pathlib operations
 # ===========================================================================
 
+
 class TestPathlib:
     """Test pathlib.Path on canister memfs."""
 
@@ -304,11 +345,13 @@ class TestPathlib:
         path = _unique("pathlib")
         exec_on_canister(
             f"from pathlib import Path; Path('{path}').write_text('pathlib-test')",
-            canister, network,
+            canister,
+            network,
         )
         result = exec_on_canister(
             f"from pathlib import Path; print(Path('{path}').read_text())",
-            canister, network,
+            canister,
+            network,
         )
         assert result == "pathlib-test"
 
@@ -316,11 +359,13 @@ class TestPathlib:
         path = _unique("plexists")
         exec_on_canister(
             f"from pathlib import Path; Path('{path}').write_text('x')",
-            canister, network,
+            canister,
+            network,
         )
         result = exec_on_canister(
             f"from pathlib import Path; print(Path('{path}').exists())",
-            canister, network,
+            canister,
+            network,
         )
         assert result == "True"
 
@@ -328,11 +373,13 @@ class TestPathlib:
         path = _unique("plmkdir")
         exec_on_canister(
             f"from pathlib import Path; Path('{path}').mkdir(parents=True)",
-            canister, network,
+            canister,
+            network,
         )
         result = exec_on_canister(
             f"from pathlib import Path; print(Path('{path}').is_dir())",
-            canister, network,
+            canister,
+            network,
         )
         assert result == "True"
 
@@ -343,12 +390,14 @@ class TestPathlib:
             f"Path('{base}').mkdir(parents=True)\n"
             f"Path('{base}/a.txt').write_text('a')\n"
             f"Path('{base}/b.txt').write_text('b')",
-            canister, network,
+            canister,
+            network,
         )
         result = exec_on_canister(
             f"from pathlib import Path\n"
             f"print(sorted([p.name for p in Path('{base}').iterdir()]))",
-            canister, network,
+            canister,
+            network,
         )
         assert "a.txt" in result
         assert "b.txt" in result
@@ -357,15 +406,18 @@ class TestPathlib:
         path = _unique("plunlink")
         exec_on_canister(
             f"from pathlib import Path; Path('{path}').write_text('x')",
-            canister, network,
+            canister,
+            network,
         )
         exec_on_canister(
             f"from pathlib import Path; Path('{path}').unlink()",
-            canister, network,
+            canister,
+            network,
         )
         result = exec_on_canister(
             f"from pathlib import Path; print(Path('{path}').exists())",
-            canister, network,
+            canister,
+            network,
         )
         assert result == "False"
 
@@ -373,6 +425,7 @@ class TestPathlib:
 # ===========================================================================
 # Edge cases and special characters
 # ===========================================================================
+
 
 class TestFilesystemEdgeCases:
     """Edge cases for the filesystem."""
@@ -382,11 +435,13 @@ class TestFilesystemEdgeCases:
         path = _unique("special file (1)")
         exec_on_canister(
             f"with open('{path}', 'w') as f: f.write('ok')",
-            canister, network,
+            canister,
+            network,
         )
         result = exec_on_canister(
             f"with open('{path}', 'r') as f: print(f.read())",
-            canister, network,
+            canister,
+            network,
         )
         assert result == "ok"
 
@@ -394,11 +449,13 @@ class TestFilesystemEdgeCases:
         path = _unique("café")
         exec_on_canister(
             f"with open('{path}', 'w') as f: f.write('unicode')",
-            canister, network,
+            canister,
+            network,
         )
         result = exec_on_canister(
             f"with open('{path}', 'r') as f: print(f.read())",
-            canister, network,
+            canister,
+            network,
         )
         assert result == "unicode"
 
@@ -406,11 +463,13 @@ class TestFilesystemEdgeCases:
         path = _unique("unicontent")
         exec_on_canister(
             f"with open('{path}', 'w') as f: f.write('日本語テスト')",
-            canister, network,
+            canister,
+            network,
         )
         result = exec_on_canister(
             f"with open('{path}', 'r') as f: print(f.read())",
-            canister, network,
+            canister,
+            network,
         )
         assert "日本語" in result
 
@@ -419,21 +478,25 @@ class TestFilesystemEdgeCases:
         new = _unique("rename_new")
         exec_on_canister(
             f"with open('{old}', 'w') as f: f.write('moved')",
-            canister, network,
+            canister,
+            network,
         )
         exec_on_canister(
             f"import os; os.rename('{old}', '{new}')",
-            canister, network,
+            canister,
+            network,
         )
         result = exec_on_canister(
             f"with open('{new}', 'r') as f: print(f.read())",
-            canister, network,
+            canister,
+            network,
         )
         assert result == "moved"
         # Old should not exist
         result2 = exec_on_canister(
             f"import os; print(os.path.exists('{old}'))",
-            canister, network,
+            canister,
+            network,
         )
         assert result2 == "False"
 
@@ -442,15 +505,18 @@ class TestFilesystemEdgeCases:
         deep = f"{base}/a/b/c/d/e/f/g"
         exec_on_canister(
             f"import os; os.makedirs('{deep}', exist_ok=True)",
-            canister, network,
+            canister,
+            network,
         )
         exec_on_canister(
             f"with open('{deep}/file.txt', 'w') as f: f.write('deep')",
-            canister, network,
+            canister,
+            network,
         )
         result = exec_on_canister(
             f"with open('{deep}/file.txt', 'r') as f: print(f.read())",
-            canister, network,
+            canister,
+            network,
         )
         assert result == "deep"
 
@@ -535,8 +601,12 @@ print('persistence_ready')
 
 # Helper to access the shim's _basilisk_file_store from shell namespace
 _FS_STORE = "import sys; _fs = sys.modules['__main__'].__dict__['_basilisk_file_store']"
-_ORIG_OPEN = "import sys; _orig_open = sys.modules['__main__'].__dict__['_original_open']"
-_ORIG_REMOVE = "import sys; _orig_remove = sys.modules['__main__'].__dict__['_original_os_remove']"
+_ORIG_OPEN = (
+    "import sys; _orig_open = sys.modules['__main__'].__dict__['_original_open']"
+)
+_ORIG_REMOVE = (
+    "import sys; _orig_remove = sys.modules['__main__'].__dict__['_original_os_remove']"
+)
 _RESTORE_FN = "import sys; _restore = sys.modules['__main__'].__dict__['_basilisk_restore_files_from_map']"
 
 
@@ -558,11 +628,13 @@ class TestFilePersistenceMap:
         path = _unique("persist_auto")
         exec_on_canister(
             f"with open('{path}', 'w') as f: f.write('durable')",
-            canister, network,
+            canister,
+            network,
         )
         result = exec_on_canister(
             f"{_FS_STORE}\nprint(_fs.contains_key('{path}'))",
-            canister, network,
+            canister,
+            network,
         )
         assert result == "True"
 
@@ -571,45 +643,54 @@ class TestFilePersistenceMap:
         path = _unique("persist_content")
         exec_on_canister(
             f"with open('{path}', 'w') as f: f.write('test_content_123')",
-            canister, network,
+            canister,
+            network,
         )
         result = exec_on_canister(
             f"{_FS_STORE}\nimport base64\n"
             f"b64 = _fs.get('{path}')\n"
             f"print(base64.b64decode(b64).decode())",
-            canister, network,
+            canister,
+            network,
         )
         assert result == "test_content_123"
 
-    def test_file_survives_simulated_upgrade(self, canister_reachable, canister, network):
+    def test_file_survives_simulated_upgrade(
+        self, canister_reachable, canister, network
+    ):
         """File should survive: write → delete from memfs → restore from map."""
         path = _unique("persist_upgrade")
         content = f"upgrade_test_{uuid.uuid4().hex[:8]}"
         # Write file (auto-persists to map)
         exec_on_canister(
             f"with open('{path}', 'w') as f: f.write('{content}')",
-            canister, network,
+            canister,
+            network,
         )
         # Delete from memfs ONLY (bypass the patched os.remove)
         exec_on_canister(
             f"{_ORIG_REMOVE}\n_orig_remove('{path}')",
-            canister, network,
+            canister,
+            network,
         )
         # Verify file is gone from memfs
         result = exec_on_canister(
             f"import os; print(os.path.exists('{path}'))",
-            canister, network,
+            canister,
+            network,
         )
         assert result == "False"
         # Restore from map (simulates post_upgrade)
         exec_on_canister(
             f"{_RESTORE_FN}\n_restore()",
-            canister, network,
+            canister,
+            network,
         )
         # Verify file is back with correct content
         result = exec_on_canister(
             f"with open('{path}', 'r') as f: print(f.read())",
-            canister, network,
+            canister,
+            network,
         )
         assert result == content
 
@@ -618,12 +699,14 @@ class TestFilePersistenceMap:
         path = _unique("persist_del")
         exec_on_canister(
             f"with open('{path}', 'w') as f: f.write('temporary')",
-            canister, network,
+            canister,
+            network,
         )
         exec_on_canister(f"import os; os.remove('{path}')", canister, network)
         result = exec_on_canister(
             f"{_FS_STORE}\nprint(_fs.contains_key('{path}'))",
-            canister, network,
+            canister,
+            network,
         )
         assert result == "False"
 
@@ -633,23 +716,27 @@ class TestFilePersistenceMap:
         new = _unique("persist_ren_new")
         exec_on_canister(
             f"with open('{old}', 'w') as f: f.write('renamed_data')",
-            canister, network,
+            canister,
+            network,
         )
         exec_on_canister(
             f"import os; os.rename('{old}', '{new}')",
-            canister, network,
+            canister,
+            network,
         )
         # Old key gone
         result = exec_on_canister(
             f"{_FS_STORE}\nprint(_fs.contains_key('{old}'))",
-            canister, network,
+            canister,
+            network,
         )
         assert result == "False"
         # New key present with correct content
         result = exec_on_canister(
             f"{_FS_STORE}\nimport base64\n"
             f"print(base64.b64decode(_fs.get('{new}')).decode())",
-            canister, network,
+            canister,
+            network,
         )
         assert result == "renamed_data"
 
@@ -658,11 +745,13 @@ class TestFilePersistenceMap:
         path = f"/tmp/volatile_{uuid.uuid4().hex[:8]}"
         exec_on_canister(
             f"with open('{path}', 'w') as f: f.write('volatile')",
-            canister, network,
+            canister,
+            network,
         )
         result = exec_on_canister(
             f"{_FS_STORE}\nprint(_fs.contains_key('{path}'))",
-            canister, network,
+            canister,
+            network,
         )
         assert result == "False"
 
@@ -670,26 +759,31 @@ class TestFilePersistenceMap:
         """Binary file content should be correctly persisted and restored."""
         path = _unique("persist_bin")
         import base64
+
         data = bytes(range(256))
         b64 = base64.b64encode(data).decode()
         exec_on_canister(
             f"import base64\n"
             f"with open('{path}', 'wb') as f:\n"
             f"    f.write(base64.b64decode('{b64}'))",
-            canister, network,
+            canister,
+            network,
         )
         # Delete from memfs, restore from map, verify content
         exec_on_canister(
             f"{_ORIG_REMOVE}\n_orig_remove('{path}')",
-            canister, network,
+            canister,
+            network,
         )
         exec_on_canister(
             f"{_RESTORE_FN}\n_restore()",
-            canister, network,
+            canister,
+            network,
         )
         result = exec_on_canister(
             f"with open('{path}', 'rb') as f: print(list(f.read()[:5]))",
-            canister, network,
+            canister,
+            network,
         )
         assert result == "[0, 1, 2, 3, 4]"
 
@@ -698,42 +792,52 @@ class TestFilePersistenceMap:
         path = _unique("persist_overwrite")
         exec_on_canister(
             f"with open('{path}', 'w') as f: f.write('first')",
-            canister, network,
+            canister,
+            network,
         )
         exec_on_canister(
             f"with open('{path}', 'w') as f: f.write('second')",
-            canister, network,
+            canister,
+            network,
         )
         result = exec_on_canister(
             f"{_FS_STORE}\nimport base64\n"
             f"print(base64.b64decode(_fs.get('{path}')).decode())",
-            canister, network,
+            canister,
+            network,
         )
         assert result == "second"
 
-    def test_nested_dir_file_persisted_and_restored(self, canister_reachable, canister, network):
+    def test_nested_dir_file_persisted_and_restored(
+        self, canister_reachable, canister, network
+    ):
         """Files in nested dirs should persist and restore with correct paths."""
         base = _unique("persist_nested")
         deep = f"{base}/sub/dir"
         exec_on_canister(
             f"import os; os.makedirs('{deep}', exist_ok=True)",
-            canister, network,
+            canister,
+            network,
         )
         exec_on_canister(
             f"with open('{deep}/data.txt', 'w') as f: f.write('nested_ok')",
-            canister, network,
+            canister,
+            network,
         )
         # Delete from memfs, restore, verify
         exec_on_canister(
             f"{_ORIG_REMOVE}\n_orig_remove('{deep}/data.txt')",
-            canister, network,
+            canister,
+            network,
         )
         exec_on_canister(
             f"{_RESTORE_FN}\n_restore()",
-            canister, network,
+            canister,
+            network,
         )
         result = exec_on_canister(
             f"with open('{deep}/data.txt', 'r') as f: print(f.read())",
-            canister, network,
+            canister,
+            network,
         )
         assert result == "nested_ok"

@@ -16,12 +16,12 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from tests.conftest import exec_on_canister, _get_canister, _get_network
-
+from tests.conftest import _get_canister, _get_network, exec_on_canister
 
 # ===========================================================================
 # Unit tests — guard metadata extraction from AST (no canister needed)
 # ===========================================================================
+
 
 class _GuardMetadataMixin:
     """Shared helper for extracting guard metadata from Python source."""
@@ -45,8 +45,7 @@ class _GuardMetadataMixin:
         """Parse source and return all function names."""
         tree = ast.parse(source)
         return [
-            node.name for node in ast.walk(tree)
-            if isinstance(node, ast.FunctionDef)
+            node.name for node in ast.walk(tree) if isinstance(node, ast.FunctionDef)
         ]
 
 
@@ -72,7 +71,9 @@ class TestGuardMetadataExtraction(_GuardMetadataMixin):
         assert guards["download_to_file"] == "guard_against_non_controllers"
 
     def test_canister_guard_function_defined(self):
-        assert "guard_against_non_controllers" in self._extract_func_names(self._canister_source)
+        assert "guard_against_non_controllers" in self._extract_func_names(
+            self._canister_source
+        )
 
     def test_benign_endpoints_not_guarded(self):
         guards = self._extract_guards(self._canister_source)
@@ -84,10 +85,13 @@ class TestGuardMetadataExtraction(_GuardMetadataMixin):
 # Integration tests — controller access (live canister)
 # ===========================================================================
 
+
 class TestControllerAccess:
     """Verify that the CI identity (a controller) can call guarded endpoints."""
 
-    def test_controller_can_execute_code_shell(self, canister_reachable, canister, network):
+    def test_controller_can_execute_code_shell(
+        self, canister_reachable, canister, network
+    ):
         result = exec_on_canister("print('guard_pass')", canister, network)
         assert result == "guard_pass"
 
@@ -95,7 +99,9 @@ class TestControllerAccess:
         """Unguarded endpoint should always work."""
         r = subprocess.run(
             ["dfx", "canister", "call", canister, "status", "--network", network],
-            capture_output=True, text=True, timeout=30,
+            capture_output=True,
+            text=True,
+            timeout=30,
         )
         assert r.returncode == 0
         assert "ok" in r.stdout.lower()
@@ -104,6 +110,7 @@ class TestControllerAccess:
 # ===========================================================================
 # Integration tests — non-controller rejection (live canister)
 # ===========================================================================
+
 
 class TestNonControllerRejection:
     """Verify that a non-controller identity is rejected by guarded endpoints.
@@ -119,28 +126,44 @@ class TestNonControllerRejection:
         """Create a temporary non-controller identity for testing."""
         # Create temp identity (ignore error if already exists)
         subprocess.run(
-            ["dfx", "identity", "new", self.TEMP_IDENTITY, "--storage-mode", "plaintext"],
-            capture_output=True, text=True,
+            [
+                "dfx",
+                "identity",
+                "new",
+                self.TEMP_IDENTITY,
+                "--storage-mode",
+                "plaintext",
+            ],
+            capture_output=True,
+            text=True,
         )
         yield
         # Cleanup: switch back to default identity
         # (the original identity is restored by switching away from temp)
         subprocess.run(
             ["dfx", "identity", "use", "ci-deploy"],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
         # Remove temp identity
         subprocess.run(
             ["dfx", "identity", "remove", self.TEMP_IDENTITY],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
 
     def _call_as_non_controller(self, canister, network, method, args=""):
         """Call a canister method using the non-controller identity."""
         cmd = [
-            "dfx", "canister", "call", canister, method,
-            "--network", network,
-            "--identity", self.TEMP_IDENTITY,
+            "dfx",
+            "canister",
+            "call",
+            canister,
+            method,
+            "--network",
+            network,
+            "--identity",
+            self.TEMP_IDENTITY,
         ]
         if args:
             cmd.append(args)
@@ -149,26 +172,34 @@ class TestNonControllerRejection:
 
     def test_non_controller_rejected_execute_code_shell(self, canister, network):
         r = self._call_as_non_controller(
-            canister, network,
-            "execute_code_shell", '("print(1)",)',
+            canister,
+            network,
+            "execute_code_shell",
+            '("print(1)",)',
         )
         # The call should fail — either via trap (Rust guard) or Err return (Python guard)
         combined = r.stdout + r.stderr
-        assert r.returncode != 0 or "Not Authorized" in combined, \
-            f"Expected rejection but got: {combined}"
-        assert "Not Authorized" in combined or "only controllers" in combined.lower(), \
-            f"Expected controller rejection message, got: {combined}"
+        assert (
+            r.returncode != 0 or "Not Authorized" in combined
+        ), f"Expected rejection but got: {combined}"
+        assert (
+            "Not Authorized" in combined or "only controllers" in combined.lower()
+        ), f"Expected controller rejection message, got: {combined}"
 
     def test_non_controller_rejected_download_to_file(self, canister, network):
         r = self._call_as_non_controller(
-            canister, network,
-            "download_to_file", '("https://example.com", "/tmp/test.txt")',
+            canister,
+            network,
+            "download_to_file",
+            '("https://example.com", "/tmp/test.txt")',
         )
         combined = r.stdout + r.stderr
-        assert r.returncode != 0 or "Not Authorized" in combined, \
-            f"Expected rejection but got: {combined}"
-        assert "Not Authorized" in combined or "only controllers" in combined.lower(), \
-            f"Expected controller rejection message, got: {combined}"
+        assert (
+            r.returncode != 0 or "Not Authorized" in combined
+        ), f"Expected rejection but got: {combined}"
+        assert (
+            "Not Authorized" in combined or "only controllers" in combined.lower()
+        ), f"Expected controller rejection message, got: {combined}"
 
     def test_non_controller_can_call_status(self, canister, network):
         """Unguarded endpoint should still work for non-controllers."""

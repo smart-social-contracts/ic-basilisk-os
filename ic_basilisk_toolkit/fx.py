@@ -28,8 +28,8 @@ import traceback
 
 from basilisk import Async, Principal, ic
 from basilisk.canisters.xrc import (
-    XRCCanister,
     XRC_CANISTER_ID,
+    XRCCanister,
 )
 from ic_python_logging import get_logger
 
@@ -146,22 +146,22 @@ class FXService:
         pairs = []
         for pair in FXPair.instances():
             human_rate = (
-                pair.rate / (10 ** pair.decimals)
-                if pair.rate and pair.decimals
-                else 0.0
+                pair.rate / (10**pair.decimals) if pair.rate and pair.decimals else 0.0
             )
-            pairs.append({
-                "name": pair.name,
-                "base_symbol": pair.base_symbol,
-                "base_class": pair.base_class,
-                "quote_symbol": pair.quote_symbol,
-                "quote_class": pair.quote_class,
-                "rate": pair.rate,
-                "decimals": pair.decimals,
-                "human_rate": human_rate,
-                "last_updated": pair.last_updated,
-                "last_error": pair.last_error,
-            })
+            pairs.append(
+                {
+                    "name": pair.name,
+                    "base_symbol": pair.base_symbol,
+                    "base_class": pair.base_class,
+                    "quote_symbol": pair.quote_symbol,
+                    "quote_class": pair.quote_class,
+                    "rate": pair.rate,
+                    "decimals": pair.decimals,
+                    "human_rate": human_rate,
+                    "last_updated": pair.last_updated,
+                    "last_error": pair.last_error,
+                }
+            )
         return pairs
 
     # ------------------------------------------------------------------
@@ -185,7 +185,7 @@ class FXService:
         pair = FXPair[f"{base_symbol}/{quote_symbol}"]
         if pair is None or pair.rate == 0:
             return None
-        return pair.rate / (10 ** pair.decimals)
+        return pair.rate / (10**pair.decimals)
 
     def get_rate_info(self, base_symbol, quote_symbol):
         """
@@ -202,9 +202,7 @@ class FXService:
         if pair is None:
             return None
         human_rate = (
-            pair.rate / (10 ** pair.decimals)
-            if pair.rate and pair.decimals
-            else 0.0
+            pair.rate / (10**pair.decimals) if pair.rate and pair.decimals else 0.0
         )
         return {
             "pair": pair.name,
@@ -244,17 +242,19 @@ class FXService:
 
         for pair in pairs:
             try:
-                result = yield self._xrc.get_exchange_rate({
-                    "base_asset": {
-                        "symbol": pair.base_symbol,
-                        "class": {pair.base_class: None},
-                    },
-                    "quote_asset": {
-                        "symbol": pair.quote_symbol,
-                        "class": {pair.quote_class: None},
-                    },
-                    "timestamp": None,
-                }).with_cycles(XRC_CYCLES_PER_CALL)
+                result = yield self._xrc.get_exchange_rate(
+                    {
+                        "base_asset": {
+                            "symbol": pair.base_symbol,
+                            "class": {pair.base_class: None},
+                        },
+                        "quote_asset": {
+                            "symbol": pair.quote_symbol,
+                            "class": {pair.quote_class: None},
+                        },
+                        "timestamp": None,
+                    }
+                ).with_cycles(XRC_CYCLES_PER_CALL)
 
                 raw = result
                 if hasattr(result, "Ok"):
@@ -329,17 +329,19 @@ class FXService:
         now = int(round(ic.time() / 1e9))
 
         try:
-            result = yield self._xrc.get_exchange_rate({
-                "base_asset": {
-                    "symbol": pair.base_symbol,
-                    "class": {pair.base_class: None},
-                },
-                "quote_asset": {
-                    "symbol": pair.quote_symbol,
-                    "class": {pair.quote_class: None},
-                },
-                "timestamp": None,
-            }).with_cycles(XRC_CYCLES_PER_CALL)
+            result = yield self._xrc.get_exchange_rate(
+                {
+                    "base_asset": {
+                        "symbol": pair.base_symbol,
+                        "class": {pair.base_class: None},
+                    },
+                    "quote_asset": {
+                        "symbol": pair.quote_symbol,
+                        "class": {pair.quote_class: None},
+                    },
+                    "timestamp": None,
+                }
+            ).with_cycles(XRC_CYCLES_PER_CALL)
 
             raw = result
             if hasattr(result, "Ok"):

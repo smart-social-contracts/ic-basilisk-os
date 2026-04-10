@@ -23,12 +23,12 @@ Key Use Case - Sync/Async Separation:
 import traceback
 from typing import Callable, List
 
-from .entities import Call, Task, TaskExecution, TaskSchedule, TaskStep
-from .status import TaskExecutionStatus, TaskStatus
-
 # These imports only work inside the canister runtime
 from basilisk import Async, Duration, ic, void
 from ic_python_logging import get_logger
+
+from .entities import Call, Task, TaskExecution, TaskSchedule, TaskStep
+from .status import TaskExecutionStatus, TaskStatus
 
 logger = get_logger("basilisk.os.task_manager")
 
@@ -119,9 +119,7 @@ def _check_and_schedule_next_step(task: Task) -> void:
                     schedule.last_run_at = now
 
                     if schedule.disabled:
-                        logger.info(
-                            f"Skipping disabled schedule for task {task.name}"
-                        )
+                        logger.info(f"Skipping disabled schedule for task {task.name}")
                         continue
 
                     logger.info(f"Scheduling time in {in_seconds} seconds")
@@ -161,9 +159,7 @@ def _create_timer_callback(step: TaskStep, task: Task) -> Callable:
             list(Call.instances())
             list(TaskStep.instances())
             list(TaskSchedule.instances())
-            _step = list(_task.steps)[
-                [str(s._id) for s in _task.steps].index(step_id)
-            ]
+            _step = list(_task.steps)[[str(s._id) for s in _task.steps].index(step_id)]
             logger.info(
                 f"Executing {'async' if is_async else 'sync'} timer callback "
                 f"for task {_task.name}"
@@ -178,7 +174,7 @@ def _create_timer_callback(step: TaskStep, task: Task) -> Callable:
                 # yield-based IC calls), delegate via yield from so the
                 # Rust drive_generator handles _ServiceCall objects and
                 # sub-generators for inter-canister calls.
-                if hasattr(fn_result, 'send'):
+                if hasattr(fn_result, "send"):
                     result = yield from fn_result
                 else:
                     result = fn_result

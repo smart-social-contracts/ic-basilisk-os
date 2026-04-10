@@ -67,6 +67,7 @@ def _vetkey_name():
 def _local_canister_exec(code, canister, network):
     """Execute code on canister via dfx."""
     from ic_basilisk_toolkit.shell import _parse_candid
+
     escaped = code.replace('"', '\\"').replace("\n", "\\n")
     cmd = ["dfx", "canister", "call"]
     if network:
@@ -74,7 +75,10 @@ def _local_canister_exec(code, canister, network):
     cmd.extend([canister, "execute_code_shell", f'("{escaped}")'])
     try:
         r = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=120,
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=120,
             cwd=_TEST_CANISTER_DIR if os.path.isdir(_TEST_CANISTER_DIR) else None,
         )
         if r.returncode != 0:
@@ -89,6 +93,7 @@ def _local_canister_exec(code, canister, network):
 def _write_file_on_canister(path, content, canister, network):
     """Write a Python file to the canister's in-memory filesystem."""
     import base64
+
     b64 = base64.b64encode(content.encode()).decode()
     result = _local_canister_exec(
         f"import base64\n"
@@ -96,23 +101,31 @@ def _write_file_on_canister(path, content, canister, network):
         f"with open('{path}', 'w') as f:\n"
         f"    f.write(_data)\n"
         f"print('wrote {path}')",
-        canister, network,
+        canister,
+        network,
     )
     assert "wrote" in result, f"Failed to write file: {result}"
 
 
 def _extract_task_id(output):
-    m = re.search(r'task\s+(\d+)', output, re.IGNORECASE)
+    m = re.search(r"task\s+(\d+)", output, re.IGNORECASE)
     return m.group(1) if m else None
 
 
 def _task_magic(cmd, canister, network):
     """Run a magic command via dfx by converting it to code."""
     from ic_basilisk_toolkit.shell import (
-        _task_list_code, _task_create_code, _task_add_step_code,
-        _task_info_code, _task_start_code, _task_stop_code,
-        _task_delete_code, _task_log_code, _TASK_RESOLVE,
+        _TASK_RESOLVE,
+        _task_add_step_code,
+        _task_create_code,
+        _task_delete_code,
+        _task_info_code,
+        _task_list_code,
+        _task_log_code,
+        _task_start_code,
+        _task_stop_code,
     )
+
     stripped = cmd.strip()
     if stripped.startswith("%task"):
         stripped = stripped[5:].strip()
@@ -122,7 +135,7 @@ def _task_magic(cmd, canister, network):
     if space_idx == -1:
         sub, rest = stripped, ""
     else:
-        sub, rest = stripped[:space_idx], stripped[space_idx + 1:]
+        sub, rest = stripped[:space_idx], stripped[space_idx + 1 :]
     code_map = {
         "list": lambda: _task_list_code(),
         "create": lambda: _task_create_code(rest),
@@ -157,16 +170,18 @@ def _run_async_task(name, code, canister, network, timeout=90):
     path = f"/_vetkey_test_{name}.py"
     _write_file_on_canister(path, code, canister, network)
 
-    result = _task_magic(f'%task create {name}', canister, network)
+    result = _task_magic(f"%task create {name}", canister, network)
     tid = _extract_task_id(result)
     assert tid, f"Failed to create task: {result}"
 
     step_result = _task_magic(
-        f'%task add-step {tid} --async --file {path}',
-        canister, network,
+        f"%task add-step {tid} --async --file {path}",
+        canister,
+        network,
     )
-    assert "Added" in step_result or "step" in step_result.lower(), \
-        f"Failed to add step: {step_result}"
+    assert (
+        "Added" in step_result or "step" in step_result.lower()
+    ), f"Failed to add step: {step_result}"
 
     _task_magic(f"%task start {tid}", canister, network)
     log = _wait_for_task_execution(tid, canister, network, timeout=timeout)
@@ -175,7 +190,8 @@ def _run_async_task(name, code, canister, network, timeout=90):
     _task_magic(f"%task delete {tid}", canister, network)
     _local_canister_exec(
         f"import os; os.remove('{path}') if os.path.exists('{path}') else None",
-        canister, network,
+        canister,
+        network,
     )
     return log
 
@@ -183,6 +199,7 @@ def _run_async_task(name, code, canister, network, timeout=90):
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture(scope="session")
 def vetkey_canister():
@@ -204,7 +221,9 @@ def canister_reachable(vetkey_canister, vetkey_network):
     """Verify the canister is reachable before running integration tests."""
     try:
         result = _local_canister_exec(
-            "print('vetkey_ping')", vetkey_canister, vetkey_network,
+            "print('vetkey_ping')",
+            vetkey_canister,
+            vetkey_network,
         )
     except Exception as e:
         pytest.skip(f"Cannot reach canister: {e}")
@@ -217,31 +236,37 @@ def canister_reachable(vetkey_canister, vetkey_network):
 # UNIT TESTS — no canister required
 # ===========================================================================
 
+
 class TestUnitVetKDTypes:
     """Unit tests for vetKD Candid type definitions."""
 
     def test_vetkd_curve_variant(self):
         """VetKDCurve should have bls12_381_g2 variant."""
         from basilisk.canisters.management.vetkd import VetKDCurve
+
         curve = VetKDCurve(bls12_381_g2=None)
         # Record/Variant are dict subclasses outside a canister
-        assert 'bls12_381_g2' in curve
+        assert "bls12_381_g2" in curve
 
     def test_vetkd_key_id_record(self):
         """VetKDKeyId should have curve and name fields."""
-        from basilisk.canisters.management.vetkd import VetKDKeyId, VetKDCurve
+        from basilisk.canisters.management.vetkd import VetKDCurve, VetKDKeyId
+
         key_id = VetKDKeyId(
             curve=VetKDCurve(bls12_381_g2=None),
             name="test_key_1",
         )
-        assert key_id['name'] == "test_key_1"
-        assert 'curve' in key_id
+        assert key_id["name"] == "test_key_1"
+        assert "curve" in key_id
 
     def test_vetkd_public_key_args(self):
         """VetKDPublicKeyArgs should accept canister_id, context, key_id."""
         from basilisk.canisters.management.vetkd import (
-            VetKDPublicKeyArgs, VetKDKeyId, VetKDCurve,
+            VetKDCurve,
+            VetKDKeyId,
+            VetKDPublicKeyArgs,
         )
+
         args = VetKDPublicKeyArgs(
             canister_id=None,
             context=b"\x08basilisktest",
@@ -250,14 +275,17 @@ class TestUnitVetKDTypes:
                 name="test_key_1",
             ),
         )
-        assert args['context'] == b"\x08basilisktest"
-        assert args['canister_id'] is None
+        assert args["context"] == b"\x08basilisktest"
+        assert args["canister_id"] is None
 
     def test_vetkd_derive_key_args(self):
         """VetKDDeriveKeyArgs should accept input, context, key_id, transport_public_key."""
         from basilisk.canisters.management.vetkd import (
-            VetKDDeriveKeyArgs, VetKDKeyId, VetKDCurve,
+            VetKDCurve,
+            VetKDDeriveKeyArgs,
+            VetKDKeyId,
         )
+
         args = VetKDDeriveKeyArgs(
             input=b"",
             context=b"\x08basilisktest",
@@ -267,20 +295,22 @@ class TestUnitVetKDTypes:
             ),
             transport_public_key=b"\x00" * 48,
         )
-        assert len(args['transport_public_key']) == 48
-        assert args['input'] == b""
+        assert len(args["transport_public_key"]) == 48
+        assert args["input"] == b""
 
     def test_vetkd_public_key_result(self):
         """VetKDPublicKeyResult should have public_key field."""
         from basilisk.canisters.management.vetkd import VetKDPublicKeyResult
+
         result = VetKDPublicKeyResult(public_key=b"\x01\x02\x03")
-        assert result['public_key'] == b"\x01\x02\x03"
+        assert result["public_key"] == b"\x01\x02\x03"
 
     def test_vetkd_derive_key_result(self):
         """VetKDDeriveKeyResult should have encrypted_key field."""
         from basilisk.canisters.management.vetkd import VetKDDeriveKeyResult
+
         result = VetKDDeriveKeyResult(encrypted_key=b"\xaa\xbb\xcc")
-        assert result['encrypted_key'] == b"\xaa\xbb\xcc"
+        assert result["encrypted_key"] == b"\xaa\xbb\xcc"
 
 
 class TestUnitManagementCanisterBindings:
@@ -288,35 +318,40 @@ class TestUnitManagementCanisterBindings:
 
     def test_management_canister_has_vetkd_public_key(self):
         from basilisk.canisters.management import ManagementCanister
-        assert hasattr(ManagementCanister, 'vetkd_public_key')
+
+        assert hasattr(ManagementCanister, "vetkd_public_key")
 
     def test_management_canister_has_vetkd_derive_key(self):
         from basilisk.canisters.management import ManagementCanister
-        assert hasattr(ManagementCanister, 'vetkd_derive_key')
+
+        assert hasattr(ManagementCanister, "vetkd_derive_key")
 
     def test_management_canister_arg_types_vetkd(self):
         """Candid arg type metadata should include vetKD methods."""
         from basilisk.canisters.management import ManagementCanister
-        arg_types = getattr(ManagementCanister, '_arg_types', {})
-        assert 'vetkd_public_key' in arg_types
-        assert 'vetkd_derive_key' in arg_types
-        assert 'bls12_381_g2' in arg_types['vetkd_public_key']
-        assert 'transport_public_key' in arg_types['vetkd_derive_key']
+
+        arg_types = getattr(ManagementCanister, "_arg_types", {})
+        assert "vetkd_public_key" in arg_types
+        assert "vetkd_derive_key" in arg_types
+        assert "bls12_381_g2" in arg_types["vetkd_public_key"]
+        assert "transport_public_key" in arg_types["vetkd_derive_key"]
 
     def test_management_canister_return_types_vetkd(self):
         """Candid return type metadata should include vetKD methods."""
         from basilisk.canisters.management import ManagementCanister
-        return_types = getattr(ManagementCanister, '_return_types', {})
-        assert 'vetkd_public_key' in return_types
-        assert 'vetkd_derive_key' in return_types
-        assert 'public_key' in return_types['vetkd_public_key']
-        assert 'encrypted_key' in return_types['vetkd_derive_key']
+
+        return_types = getattr(ManagementCanister, "_return_types", {})
+        assert "vetkd_public_key" in return_types
+        assert "vetkd_derive_key" in return_types
+        assert "public_key" in return_types["vetkd_public_key"]
+        assert "encrypted_key" in return_types["vetkd_derive_key"]
 
     def test_management_canister_singleton(self):
         """management_canister singleton should have vetKD methods."""
         from basilisk.canisters.management import management_canister
-        assert hasattr(management_canister, 'vetkd_public_key')
-        assert hasattr(management_canister, 'vetkd_derive_key')
+
+        assert hasattr(management_canister, "vetkd_public_key")
+        assert hasattr(management_canister, "vetkd_derive_key")
 
 
 class TestUnitVetKeyServiceContext:
@@ -374,6 +409,7 @@ class TestUnitShellFlagParsing:
 
     def test_parse_no_flags(self):
         from ic_basilisk_toolkit.shell import _parse_vetkey_flags
+
         cleaned, scope, input_text, key_name = _parse_vetkey_flags("pubkey")
         assert cleaned == "pubkey"
         assert scope is None
@@ -382,6 +418,7 @@ class TestUnitShellFlagParsing:
 
     def test_parse_scope_flag(self):
         from ic_basilisk_toolkit.shell import _parse_vetkey_flags
+
         cleaned, scope, input_text, key_name = _parse_vetkey_flags(
             "pubkey --scope my-custom-scope"
         )
@@ -391,6 +428,7 @@ class TestUnitShellFlagParsing:
 
     def test_parse_input_flag(self):
         from ic_basilisk_toolkit.shell import _parse_vetkey_flags
+
         cleaned, scope, input_text, key_name = _parse_vetkey_flags(
             "derive abc123 --input document-42"
         )
@@ -400,14 +438,14 @@ class TestUnitShellFlagParsing:
 
     def test_parse_key_flag(self):
         from ic_basilisk_toolkit.shell import _parse_vetkey_flags
-        cleaned, scope, input_text, key_name = _parse_vetkey_flags(
-            "pubkey --key key_1"
-        )
+
+        cleaned, scope, input_text, key_name = _parse_vetkey_flags("pubkey --key key_1")
         assert key_name == "key_1"
         assert "pubkey" in cleaned
 
     def test_parse_all_flags(self):
         from ic_basilisk_toolkit.shell import _parse_vetkey_flags
+
         cleaned, scope, input_text, key_name = _parse_vetkey_flags(
             "derive aabbcc --scope admin --input doc-1 --key key_1"
         )
@@ -419,6 +457,7 @@ class TestUnitShellFlagParsing:
 
     def test_parse_flags_order_independent(self):
         from ic_basilisk_toolkit.shell import _parse_vetkey_flags
+
         cleaned1, scope1, input1, key1 = _parse_vetkey_flags(
             "derive ff --key key_1 --scope x --input y"
         )
@@ -435,6 +474,7 @@ class TestUnitShellDispatch:
 
     def test_handle_vetkey_no_args_shows_usage(self):
         from ic_basilisk_toolkit.shell import _handle_vetkey
+
         result = _handle_vetkey("", "dummy-canister", "ic")
         assert "Usage:" in result
         assert "pubkey" in result
@@ -442,17 +482,20 @@ class TestUnitShellDispatch:
 
     def test_handle_vetkey_help_shows_usage(self):
         from ic_basilisk_toolkit.shell import _handle_vetkey
+
         result = _handle_vetkey("help", "dummy-canister", "ic")
         assert "Usage:" in result
 
     def test_handle_vetkey_unknown_subcmd(self):
         from ic_basilisk_toolkit.shell import _handle_vetkey
+
         result = _handle_vetkey("foobar", "dummy-canister", "ic")
         assert "Unknown vetkey command: foobar" in result
 
     def test_handle_vetkey_derive_no_tpk(self):
         """derive without transport_public_key should show usage."""
         from ic_basilisk_toolkit.shell import _handle_vetkey
+
         result = _handle_vetkey("derive", "dummy-canister", "ic")
         assert "Usage:" in result
         assert "transport_public_key_hex" in result
@@ -460,6 +503,7 @@ class TestUnitShellDispatch:
     def test_handle_vetkey_derive_invalid_hex(self):
         """derive with invalid hex should return error."""
         from ic_basilisk_toolkit.shell import _handle_vetkey
+
         result = _handle_vetkey("derive ZZZZ_NOT_HEX", "dummy-canister", "ic")
         assert "[error]" in result
         assert "invalid transport public key hex" in result
@@ -470,6 +514,7 @@ class TestUnitOSExports:
 
     def test_vetkey_service_in_all(self):
         import ic_basilisk_toolkit
+
         assert "VetKeyService" in ic_basilisk_toolkit.__all__
 
 
@@ -478,14 +523,17 @@ class TestUnitKeyConstants:
 
     def test_production_key(self):
         from ic_basilisk_toolkit.vetkeys import VETKD_KEY_PRODUCTION
+
         assert VETKD_KEY_PRODUCTION == "key_1"
 
     def test_test_key(self):
         from ic_basilisk_toolkit.vetkeys import VETKD_KEY_TEST
+
         assert VETKD_KEY_TEST == "test_key_1"
 
     def test_local_key(self):
         from ic_basilisk_toolkit.vetkeys import VETKD_KEY_LOCAL
+
         assert VETKD_KEY_LOCAL == "dfx_test_key"
 
 
@@ -493,12 +541,17 @@ class TestUnitKeyConstants:
 # INTEGRATION TESTS — require live canister
 # ===========================================================================
 
+
 class TestIntegrationVetKDPublicKey:
     """Integration tests for vetkd_public_key via live canister."""
 
     @pytest.mark.slow
     def test_vetkd_public_key_via_task(
-        self, canister_reachable, vetkey_canister, vetkey_network, key_name,
+        self,
+        canister_reachable,
+        vetkey_canister,
+        vetkey_network,
+        key_name,
     ):
         """Derive a vetKD public key from the management canister.
 
@@ -517,7 +570,7 @@ class TestIntegrationVetKDPublicKey:
             f"    _args = ic.candid_encode('(record {{ canister_id = null; "
             f"context = blob \"' + _ctx_hex + '\"; "
             f"key_id = record {{ curve = variant {{ bls12_381_g2 = null }}; "
-            f"name = \"{key_name}\" }} }})')\n"
+            f'name = "{key_name}" }} }})\')\n'
             "    _result = yield ic.call_raw('aaaaa-aa', 'vetkd_public_key', _args, 26_000_000_000)\n"
             "    if hasattr(_result, 'Ok') and _result.Ok is not None:\n"
             "        _decoded = ic.candid_decode(_result.Ok)\n"
@@ -529,14 +582,17 @@ class TestIntegrationVetKDPublicKey:
         )
 
         log = _run_async_task(
-            "_test_vetkey_pubkey", code,
-            vetkey_canister, vetkey_network, timeout=90,
+            "_test_vetkey_pubkey",
+            code,
+            vetkey_canister,
+            vetkey_network,
+            timeout=90,
         )
         assert "completed" in log, f"Task did not complete: {log}"
 
         # Expect either success or a known rejection (if vetKD not enabled on this subnet)
         if "VETKEY_PK_OK" in log:
-            m = re.search(r'VETKEY_PK_OK:(\d+)', log)
+            m = re.search(r"VETKEY_PK_OK:(\d+)", log)
             assert m, f"Could not parse public key length from: {log}"
             pk_repr_len = int(m.group(1))
             assert pk_repr_len > 0, "Public key should not be empty"
@@ -549,7 +605,11 @@ class TestIntegrationVetKDPublicKey:
 
     @pytest.mark.slow
     def test_vetkd_public_key_different_contexts_differ(
-        self, canister_reachable, vetkey_canister, vetkey_network, key_name,
+        self,
+        canister_reachable,
+        vetkey_canister,
+        vetkey_network,
+        key_name,
     ):
         """Two different contexts should produce different public keys.
 
@@ -567,9 +627,9 @@ class TestIntegrationVetKDPublicKey:
             code = (
                 "def async_task():\n"
                 f"    _args = ic.candid_encode('(record {{ canister_id = null; "
-                f"context = blob \"{ctx_hex}\"; "
+                f'context = blob "{ctx_hex}"; '
                 f"key_id = record {{ curve = variant {{ bls12_381_g2 = null }}; "
-                f"name = \"{key_name}\" }} }})')\n"
+                f'name = "{key_name}" }} }})\')\n'
                 "    _result = yield ic.call_raw('aaaaa-aa', 'vetkd_public_key', _args, 26_000_000_000)\n"
                 "    if hasattr(_result, 'Ok') and _result.Ok is not None:\n"
                 "        return 'VETKEY_CTX_OK:' + str(ic.candid_decode(_result.Ok))\n"
@@ -579,7 +639,10 @@ class TestIntegrationVetKDPublicKey:
 
             log = _run_async_task(
                 f"_test_vetkey_ctx_{scope_label.replace('-', '_')}",
-                code, vetkey_canister, vetkey_network, timeout=120,
+                code,
+                vetkey_canister,
+                vetkey_network,
+                timeout=120,
             )
             assert "completed" in log, f"Task did not complete for {scope_label}: {log}"
             results.append(log)
@@ -597,7 +660,11 @@ class TestIntegrationVetKDDeriveKey:
 
     @pytest.mark.slow
     def test_vetkd_derive_key_via_task(
-        self, canister_reachable, vetkey_canister, vetkey_network, key_name,
+        self,
+        canister_reachable,
+        vetkey_canister,
+        vetkey_network,
+        key_name,
     ):
         """Derive an encrypted vetKey from the management canister.
 
@@ -619,10 +686,10 @@ class TestIntegrationVetKDDeriveKey:
             "    _ctx_hex = ''.join(f'{b:02x}' for b in _ctx)\n"
             f"    _tpk = '{dummy_tpk_hex}'\n"
             f"    _args = ic.candid_encode('(record {{ "
-            f"input = blob \"\"; "
+            f'input = blob ""; '
             f"context = blob \"' + _ctx_hex + '\"; "
             f"key_id = record {{ curve = variant {{ bls12_381_g2 = null }}; "
-            f"name = \"{key_name}\" }}; "
+            f'name = "{key_name}" }}; '
             f"transport_public_key = blob \"' + _tpk + '\" }})')\n"
             "    _result = yield ic.call_raw('aaaaa-aa', 'vetkd_derive_key', _args, 54_000_000_000)\n"
             "    if hasattr(_result, 'Ok') and _result.Ok is not None:\n"
@@ -635,13 +702,16 @@ class TestIntegrationVetKDDeriveKey:
         )
 
         log = _run_async_task(
-            "_test_vetkey_derive", code,
-            vetkey_canister, vetkey_network, timeout=90,
+            "_test_vetkey_derive",
+            code,
+            vetkey_canister,
+            vetkey_network,
+            timeout=90,
         )
         assert "completed" in log, f"Task did not complete: {log}"
 
         if "VETKEY_DK_OK" in log:
-            m = re.search(r'VETKEY_DK_OK:(\d+)', log)
+            m = re.search(r"VETKEY_DK_OK:(\d+)", log)
             assert m, f"Could not parse encrypted key length from: {log}"
             ek_repr_len = int(m.group(1))
             assert ek_repr_len > 0, "Encrypted key should not be empty"
@@ -654,7 +724,11 @@ class TestIntegrationVetKDDeriveKey:
 
     @pytest.mark.slow
     def test_vetkd_derive_key_different_inputs_differ(
-        self, canister_reachable, vetkey_canister, vetkey_network, key_name,
+        self,
+        canister_reachable,
+        vetkey_canister,
+        vetkey_network,
+        key_name,
     ):
         """Two different inputs (same context) should produce different encrypted keys.
 
@@ -675,11 +749,11 @@ class TestIntegrationVetKDDeriveKey:
                 "    _scope_hex = ''.join(f'{b:02x}' for b in _scope)\n"
                 f"    _ctx_hex = '{ds_len_hex}{ds_hex}' + _scope_hex\n"
                 f"    _args = ic.candid_encode('(record {{ "
-                f"input = blob \"{input_hex}\"; "
+                f'input = blob "{input_hex}"; '
                 f"context = blob \"' + _ctx_hex + '\"; "
                 f"key_id = record {{ curve = variant {{ bls12_381_g2 = null }}; "
-                f"name = \"{key_name}\" }}; "
-                f"transport_public_key = blob \"{tpk_hex}\" }})')\n"
+                f'name = "{key_name}" }}; '
+                f'transport_public_key = blob "{tpk_hex}" }})\')\n'
                 "    _result = yield ic.call_raw('aaaaa-aa', 'vetkd_derive_key', _args, 54_000_000_000)\n"
                 "    if hasattr(_result, 'Ok') and _result.Ok is not None:\n"
                 "        return 'VETKEY_DI_OK:' + str(ic.candid_decode(_result.Ok))\n"
@@ -689,7 +763,10 @@ class TestIntegrationVetKDDeriveKey:
 
             log = _run_async_task(
                 f"_test_vetkey_di_{input_label.replace('-', '_')}",
-                code, vetkey_canister, vetkey_network, timeout=120,
+                code,
+                vetkey_canister,
+                vetkey_network,
+                timeout=120,
             )
             assert "completed" in log, f"Task did not complete for {input_label}: {log}"
             results.append(log)
@@ -707,7 +784,11 @@ class TestIntegrationShellVetKey:
 
     @pytest.mark.slow
     def test_vetkey_pubkey_via_timer(
-        self, canister_reachable, vetkey_canister, vetkey_network, key_name,
+        self,
+        canister_reachable,
+        vetkey_canister,
+        vetkey_network,
+        key_name,
     ):
         """Test %vetkey pubkey by executing the timer+memfs pattern directly."""
         # This tests the same code path as the shell's _vetkey_pubkey function
@@ -723,7 +804,7 @@ class TestIntegrationShellVetKey:
             f"        _args = ic.candid_encode('(record {{ canister_id = null; "
             f"context = blob \"' + _ctx_hex + '\"; "
             f"key_id = record {{ curve = variant {{ bls12_381_g2 = null }}; "
-            f"name = \"{key_name}\" }} }})')\n"
+            f'name = "{key_name}" }} }})\')\n'
             "        _result = yield ic.call_raw('aaaaa-aa', 'vetkd_public_key', _args, 26_000_000_000)\n"
             "        if hasattr(_result, 'Ok') and _result.Ok is not None:\n"
             "            _decoded = ic.candid_decode(_result.Ok)\n"
@@ -760,23 +841,28 @@ class TestIntegrationShellVetKey:
         for _ in range(15):
             time.sleep(3)
             poll_result = _local_canister_exec(
-                poll_code, vetkey_canister, vetkey_network,
+                poll_code,
+                vetkey_canister,
+                vetkey_network,
             )
-            if poll_result and 'VETKEY_RESULT:' in poll_result:
-                json_str = poll_result.split('VETKEY_RESULT:', 1)[1].strip()
+            if poll_result and "VETKEY_RESULT:" in poll_result:
+                json_str = poll_result.split("VETKEY_RESULT:", 1)[1].strip()
                 data = json.loads(json_str)
-                if data.get('ok'):
+                if data.get("ok"):
                     print(f"\n  Shell-style pubkey result: {json_str[:120]}...")
                     found = True
                 else:
-                    print(f"\n  Shell-style pubkey error (may be expected): {data.get('error', '')[:120]}")
+                    print(
+                        f"\n  Shell-style pubkey error (may be expected): {data.get('error', '')[:120]}"
+                    )
                     found = True
                 break
 
         # Clean up
         _local_canister_exec(
             "import os\ntry:\n    os.remove('/tmp/_vetkey_result.txt')\nexcept OSError:\n    pass\nprint('cleaned')",
-            vetkey_canister, vetkey_network,
+            vetkey_canister,
+            vetkey_network,
         )
 
         if not found:
@@ -787,22 +873,27 @@ class TestIntegrationShellVetKey:
 # Cycle cost sanity check (unit test)
 # ===========================================================================
 
+
 class TestUnitCycleCosts:
     """Verify cycle cost expectations are documented correctly."""
 
     def test_derive_key_cycle_cost_production(self):
         """Production key derivation should attach ~54B cycles."""
         # From the shell code — verify the constant is correct
-        from ic_basilisk_toolkit.shell import _vetkey_derive
         import inspect
+
+        from ic_basilisk_toolkit.shell import _vetkey_derive
+
         source = inspect.getsource(_vetkey_derive)
-        assert "54_000_000_000" in source, \
-            "derive_key should attach 54B cycles for production key"
+        assert (
+            "54_000_000_000" in source
+        ), "derive_key should attach 54B cycles for production key"
 
     def test_public_key_cycle_cost(self):
         """Public key call should attach ~26B cycles."""
-        from ic_basilisk_toolkit.shell import _vetkey_pubkey
         import inspect
+
+        from ic_basilisk_toolkit.shell import _vetkey_pubkey
+
         source = inspect.getsource(_vetkey_pubkey)
-        assert "26_000_000_000" in source, \
-            "public_key should attach 26B cycles"
+        assert "26_000_000_000" in source, "public_key should attach 26B cycles"

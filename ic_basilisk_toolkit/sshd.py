@@ -47,8 +47,12 @@ def _make_process_factory(canister: str, network: str, module_dir: str):
     async def process_factory(process):
         """Called when a client requests a shell or exec channel."""
         cmd = [
-            sys.executable, "-u", "-m", "ic_basilisk_toolkit.shell",
-            "--canister", canister,
+            sys.executable,
+            "-u",
+            "-m",
+            "ic_basilisk_toolkit.shell",
+            "--canister",
+            canister,
         ]
         if network:
             cmd.extend(["--network", network])
@@ -112,7 +116,9 @@ def _make_process_factory(canister: str, network: str, module_dir: str):
                 pass
 
         try:
-            await asyncio.gather(ssh_to_proc(), proc_stdout_to_ssh(), proc_stderr_to_ssh())
+            await asyncio.gather(
+                ssh_to_proc(), proc_stdout_to_ssh(), proc_stderr_to_ssh()
+            )
             await proc.wait()
             process.exit(proc.returncode or 0)
         except (asyncssh.BreakReceived, asyncssh.TerminalSizeChanged):
@@ -130,8 +136,20 @@ async def start_server(canister: str, network: str, port: int, host_key_path: st
     if not os.path.exists(host_key_path):
         print(f"Generating SSH host key: {host_key_path}", file=sys.stderr)
         import subprocess
+
         subprocess.run(
-            ["ssh-keygen", "-t", "rsa", "-b", "2048", "-f", host_key_path, "-N", "", "-q"],
+            [
+                "ssh-keygen",
+                "-t",
+                "rsa",
+                "-b",
+                "2048",
+                "-f",
+                host_key_path,
+                "-N",
+                "",
+                "-q",
+            ],
             check=True,
         )
 
@@ -149,7 +167,10 @@ async def start_server(canister: str, network: str, port: int, host_key_path: st
     print(f"  ssh -p {port} -o StrictHostKeyChecking=no localhost", file=sys.stderr)
     print(f"", file=sys.stderr)
     print(f"Or run a single command:", file=sys.stderr)
-    print(f"  ssh -p {port} -o StrictHostKeyChecking=no localhost 'print(1+1)'", file=sys.stderr)
+    print(
+        f"  ssh -p {port} -o StrictHostKeyChecking=no localhost 'print(1+1)'",
+        file=sys.stderr,
+    )
     print(f"", file=sys.stderr)
     print(f"SFTP (canister filesystem):", file=sys.stderr)
     print(f"  sftp -P {port} -o StrictHostKeyChecking=no localhost", file=sys.stderr)
@@ -164,7 +185,9 @@ async def start_server(canister: str, network: str, port: int, host_key_path: st
         return CanisterSFTPServer(conn, canister, network)
 
     await asyncssh.create_server(
-        BasiliskSSHServer, "", port,
+        BasiliskSSHServer,
+        "",
+        port,
         server_host_keys=[host_key_path],
         process_factory=process_factory,
         sftp_factory=sftp_factory,
@@ -184,9 +207,14 @@ def main():
     )
     parser.add_argument("--canister", required=True, help="Canister name or ID")
     parser.add_argument("--network", default=None, help="Network: local, ic, or URL")
-    parser.add_argument("--port", type=int, default=2222, help="SSH port (default: 2222)")
-    parser.add_argument("--host-key", default="/tmp/basilisk_host_key",
-                        help="Path to SSH host key (auto-generated if missing)")
+    parser.add_argument(
+        "--port", type=int, default=2222, help="SSH port (default: 2222)"
+    )
+    parser.add_argument(
+        "--host-key",
+        default="/tmp/basilisk_host_key",
+        help="Path to SSH host key (auto-generated if missing)",
+    )
 
     args = parser.parse_args()
 
@@ -196,7 +224,10 @@ def main():
         print("\nbasilisk sshd stopped.", file=sys.stderr)
     except OSError as e:
         if "Address already in use" in str(e):
-            print(f"Error: port {args.port} already in use. Try --port <other>", file=sys.stderr)
+            print(
+                f"Error: port {args.port} already in use. Try --port <other>",
+                file=sys.stderr,
+            )
             sys.exit(1)
         raise
 

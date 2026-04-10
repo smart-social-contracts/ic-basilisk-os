@@ -26,20 +26,25 @@ except ImportError:
 try:
     from contextlib import redirect_stderr, redirect_stdout
 except ImportError:
+
     class _NullRedirect:
         """No-op context manager for WASI where contextlib is unavailable."""
+
         def __init__(self, target):
             pass
+
         def __enter__(self):
             return self
+
         def __exit__(self, *args):
             pass
+
     redirect_stdout = redirect_stderr = _NullRedirect
 
 from ic_python_logging import get_logger, get_logs
 
 if TYPE_CHECKING:
-    from .entities import TaskExecution, Task
+    from .entities import Task, TaskExecution
 
 logger = get_logger("basilisk.os.execution")
 
@@ -57,13 +62,15 @@ class _CodexModuleFinder:
     def _make_lazy_getattr(mod):
         def _lazy_codex_getattr(attr, _mod=mod):
             from .entities import Codex
+
             for c in Codex.instances():
                 if c.name == _mod.__name__ and c.code:
-                    exec(compile(c.code, _mod.__name__ + '.py', 'exec'), _mod.__dict__)
+                    exec(compile(c.code, _mod.__name__ + ".py", "exec"), _mod.__dict__)
                     if attr in _mod.__dict__:
                         return _mod.__dict__[attr]
                     break
             raise AttributeError(f"module '{_mod.__name__}' has no attribute '{attr}'")
+
         return _lazy_codex_getattr
 
     def find_module(self, fullname, path=None):
@@ -71,6 +78,7 @@ class _CodexModuleFinder:
             return None
         try:
             from .entities import Codex
+
             for c in Codex.instances():
                 if c.name == fullname:
                     return self
@@ -115,31 +123,99 @@ def _ensure_codex_lazy_loading():
 
     # Stdlib modules that basilisk stubs as wasi-stub but should never be
     # treated as codex modules.
-    _SKIP_MODULES = frozenset({
-        'ast', 'json', 'traceback', 'io', 'sys', 'os', 'math', 'time',
-        'datetime', 'collections', 'functools', 'itertools', 'operator',
-        'copy', 'types', 'abc', 'enum', 're', 'string', 'textwrap',
-        'struct', 'hashlib', 'hmac', 'base64', 'binascii', 'logging',
-        'warnings', 'contextlib', 'inspect', 'dis', 'token', 'tokenize',
-        'keyword', 'pprint', 'decimal', 'fractions', 'random', 'statistics',
-        'pathlib', 'posixpath', 'ntpath', 'genericpath', 'fnmatch', 'glob',
-        'shutil', 'tempfile', 'csv', 'configparser', 'argparse', 'getopt',
-        'unittest', 'doctest', 'pdb', 'profile', 'cProfile', 'timeit',
-        'pickle', 'shelve', 'marshal', 'copyreg', 'socket', 'select',
-        'selectors', 'signal', 'errno', 'ctypes', 'threading', 'queue',
-        'multiprocessing', 'subprocess', 'sched', 'http', 'urllib',
-        'email', 'html', 'xml', 'webbrowser', 'cgi', 'cgitb',
-    })
+    _SKIP_MODULES = frozenset(
+        {
+            "ast",
+            "json",
+            "traceback",
+            "io",
+            "sys",
+            "os",
+            "math",
+            "time",
+            "datetime",
+            "collections",
+            "functools",
+            "itertools",
+            "operator",
+            "copy",
+            "types",
+            "abc",
+            "enum",
+            "re",
+            "string",
+            "textwrap",
+            "struct",
+            "hashlib",
+            "hmac",
+            "base64",
+            "binascii",
+            "logging",
+            "warnings",
+            "contextlib",
+            "inspect",
+            "dis",
+            "token",
+            "tokenize",
+            "keyword",
+            "pprint",
+            "decimal",
+            "fractions",
+            "random",
+            "statistics",
+            "pathlib",
+            "posixpath",
+            "ntpath",
+            "genericpath",
+            "fnmatch",
+            "glob",
+            "shutil",
+            "tempfile",
+            "csv",
+            "configparser",
+            "argparse",
+            "getopt",
+            "unittest",
+            "doctest",
+            "pdb",
+            "profile",
+            "cProfile",
+            "timeit",
+            "pickle",
+            "shelve",
+            "marshal",
+            "copyreg",
+            "socket",
+            "select",
+            "selectors",
+            "signal",
+            "errno",
+            "ctypes",
+            "threading",
+            "queue",
+            "multiprocessing",
+            "subprocess",
+            "sched",
+            "http",
+            "urllib",
+            "email",
+            "html",
+            "xml",
+            "webbrowser",
+            "cgi",
+            "cgitb",
+        }
+    )
 
     # Patch existing wasi-stub modules (backward compat with old preamble)
     for name, mod in list(sys.modules.items()):
         # Check __dict__ directly to avoid triggering _LazyMod.__getattr__
-        if mod.__dict__.get('__file__') != '<wasi-stub>':
+        if mod.__dict__.get("__file__") != "<wasi-stub>":
             continue
-        if '__getattr__' in mod.__dict__:
+        if "__getattr__" in mod.__dict__:
             continue
         # Skip stdlib modules that are wasi-stubs but not codex modules
-        if name in _SKIP_MODULES or name.split('.')[0] in _SKIP_MODULES:
+        if name in _SKIP_MODULES or name.split(".")[0] in _SKIP_MODULES:
             continue
 
         mod.__getattr__ = _CodexModuleFinder._make_lazy_getattr(mod)
@@ -172,7 +248,12 @@ def create_task_entity_class(task_name):
     return TaskEntity
 
 
-def run_code(source_code, locals={}, task: Optional["Task"] = None, task_execution: Optional["TaskExecution"] = None):
+def run_code(
+    source_code,
+    locals={},
+    task: Optional["Task"] = None,
+    task_execution: Optional["TaskExecution"] = None,
+):
     """Execute Python code with optional task-scoped entity support.
 
     Args:
@@ -196,6 +277,7 @@ def run_code(source_code, locals={}, task: Optional["Task"] = None, task_executi
     try:
         import _cdk as basilisk
         from _cdk import ic
+
         safe_globals["basilisk"] = basilisk
         safe_globals["ic"] = ic
     except ImportError:
@@ -207,6 +289,7 @@ def run_code(source_code, locals={}, task: Optional["Task"] = None, task_executi
     else:
         try:
             from _cdk import ic as _ic
+
             execution_logger = get_logger(f"execution_{_ic.time()}")
         except ImportError:
             execution_logger = get_logger("execution")
@@ -232,6 +315,7 @@ def run_code(source_code, locals={}, task: Optional["Task"] = None, task_executi
         class _DummyIO:
             def getvalue(self):
                 return ""
+
         stdout_capture = _DummyIO()
         stderr_capture = _DummyIO()
 
@@ -241,6 +325,7 @@ def run_code(source_code, locals={}, task: Optional["Task"] = None, task_executi
             # Redirect any get_logger() calls in exec'd code to the execution logger
             # so codex log output is captured under the task execution's logger name
             import ic_python_logging as _ipl
+
             _original_get_logger = _ipl.get_logger
             _ipl.get_logger = lambda name=None: execution_logger
             safe_globals["get_logger"] = lambda name=None: execution_logger
@@ -271,7 +356,7 @@ def run_code(source_code, locals={}, task: Optional["Task"] = None, task_executi
             "result": safe_globals.get("result"),
             "logs": get_logs(logger_name=execution_logger.name),
             "stdout_content": stdout_content,
-            "stderr_content": stderr_content
+            "stderr_content": stderr_content,
         }
 
     except Exception:
@@ -299,7 +384,7 @@ def run_code(source_code, locals={}, task: Optional["Task"] = None, task_executi
             "result": None,
             "logs": get_logs(logger_name=execution_logger.name),
             "stdout_content": stdout_content,
-            "stderr_content": stderr_content
+            "stderr_content": stderr_content,
         }
 
     return result

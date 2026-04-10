@@ -14,13 +14,13 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from ic_basilisk_toolkit.shell import canister_exec, _parse_candid, _handle_magic
+from ic_basilisk_toolkit.shell import _handle_magic, _parse_candid, canister_exec
 from tests.conftest import exec_on_canister, magic_on_canister
-
 
 # ===========================================================================
 # Candid parsing (pure, no canister needed)
 # ===========================================================================
+
 
 class TestCandidParsing:
     """Test the Candid response parser — this is critical for reliability."""
@@ -59,6 +59,7 @@ class TestCandidParsing:
 # ===========================================================================
 # Shell execution — basic operations
 # ===========================================================================
+
 
 class TestShellExec:
     """Test canister_exec against a live canister."""
@@ -131,6 +132,7 @@ class TestShellExec:
 # Persistent variables (shell session state)
 # ===========================================================================
 
+
 class TestPersistentVariables:
     """Test variable persistence in execute_code_shell.
 
@@ -151,7 +153,8 @@ class TestPersistentVariables:
         """Functions defined and called in the same execution work."""
         result = exec_on_canister(
             "def shelltestfn(x): return x * 2\nprint(shelltestfn(21))",
-            canister, network,
+            canister,
+            network,
         )
         assert result == "42"
 
@@ -159,7 +162,8 @@ class TestPersistentVariables:
         """Imports used in the same call work."""
         result = exec_on_canister(
             "import json as shelltestjson\nprint(shelltestjson.dumps([1,2,3]))",
-            canister, network,
+            canister,
+            network,
         )
         assert result in ("[1, 2, 3]", "[1,2,3]")
 
@@ -176,6 +180,7 @@ class TestPersistentVariables:
 # ===========================================================================
 # Magic commands
 # ===========================================================================
+
 
 class TestMagicCommands:
     """Test magic commands via _handle_magic."""
@@ -196,7 +201,12 @@ class TestMagicCommands:
     def test_ps(self, canister_reachable, canister, network):
         result = magic_on_canister("%ps", canister, network)
         # Either shows tasks, "No tasks.", or ImportError/ValueError if entities not available
-        assert "|" in result or "No tasks" in result or "ImportError" in result or "ValueError" in result
+        assert (
+            "|" in result
+            or "No tasks" in result
+            or "ImportError" in result
+            or "ValueError" in result
+        )
 
     def test_ls_root(self, canister_reachable, canister, network):
         """%ls should list the canister's root filesystem."""
@@ -218,7 +228,8 @@ class TestMagicCommands:
         # First write a file
         exec_on_canister(
             "with open('/_test_cat_magic', 'w') as f: f.write('cat-magic-test')",
-            canister, network,
+            canister,
+            network,
         )
         result = magic_on_canister("%cat /_test_cat_magic", canister, network)
         assert result == "cat-magic-test"
@@ -261,7 +272,8 @@ class TestMagicCommands:
         # Write a script to the canister
         exec_on_canister(
             "with open('_test_run_file.py', 'w') as f: f.write('print(7*6)')",
-            canister, network,
+            canister,
+            network,
         )
         result = magic_on_canister("%run _test_run_file.py", canister, network)
         assert result == "42"
@@ -277,7 +289,8 @@ class TestMagicCommands:
         # Write a known file on the canister
         exec_on_canister(
             f"with open('{tag}', 'w') as f: f.write('hello-from-canister')",
-            canister, network,
+            canister,
+            network,
         )
         local_path = os.path.join(tempfile.gettempdir(), tag)
         try:
@@ -300,7 +313,8 @@ class TestMagicCommands:
         tag = "_get_basename_test"
         exec_on_canister(
             f"with open('{tag}', 'w') as f: f.write('basename-test')",
-            canister, network,
+            canister,
+            network,
         )
         # Run from a temp directory so the default basename lands there
         orig_cwd = os.getcwd()
@@ -316,20 +330,17 @@ class TestMagicCommands:
         finally:
             os.chdir(orig_cwd)
             import shutil
+
             shutil.rmtree(tmpdir, ignore_errors=True)
 
     def test_put_file_to_canister(self, canister_reachable, canister, network):
         """%put should upload a local file to the canister's memfs."""
         tag = "_put_test_abc123"
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".txt", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
             f.write("hello-from-local")
             local_path = f.name
         try:
-            result = magic_on_canister(
-                f"%put {local_path} {tag}", canister, network
-            )
+            result = magic_on_canister(f"%put {local_path} {tag}", canister, network)
             assert "Uploaded" in result
             # Verify the file is on the canister
             cat_result = magic_on_canister(f"%cat {tag}", canister, network)
@@ -339,7 +350,9 @@ class TestMagicCommands:
 
     def test_put_nonexistent_local_file(self, canister, network):
         """%put with a nonexistent local file should report an error."""
-        result = _handle_magic("%put /nonexistent/local.txt remote.txt", canister, network)
+        result = _handle_magic(
+            "%put /nonexistent/local.txt remote.txt", canister, network
+        )
         assert "error" in result.lower()
 
     def test_put_defaults_to_basename(self, canister_reachable, canister, network):
@@ -368,14 +381,10 @@ class TestMagicCommands:
         local_down = local_up + ".down"
         try:
             # Upload
-            result = magic_on_canister(
-                f"%put {local_up} {tag}", canister, network
-            )
+            result = magic_on_canister(f"%put {local_up} {tag}", canister, network)
             assert "Uploaded" in result
             # Download
-            result = magic_on_canister(
-                f"%get {tag} {local_down}", canister, network
-            )
+            result = magic_on_canister(f"%get {tag} {local_down}", canister, network)
             assert "Downloaded" in result
             with open(local_down, "rb") as f:
                 assert f.read() == data
@@ -389,19 +398,28 @@ class TestMagicCommands:
 # One-shot mode (-c flag)
 # ===========================================================================
 
+
 class TestOneshotMode:
     """Test basilisk shell invocation via subprocess (one-shot mode)."""
 
     def _run_shell(self, code, canister, network):
         """Run basilisk shell -c and return stdout."""
         cmd = [
-            sys.executable, "-m", "basilisk.shell",
-            "--canister", canister,
-            "--network", network,
-            "-c", code,
+            sys.executable,
+            "-m",
+            "basilisk.shell",
+            "--canister",
+            canister,
+            "--network",
+            network,
+            "-c",
+            code,
         ]
         r = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=120,
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=120,
             cwd=os.path.join(os.path.dirname(__file__), ".."),
         )
         return r.stdout.strip(), r.stderr.strip(), r.returncode
@@ -419,7 +437,12 @@ class TestOneshotMode:
     def test_oneshot_ps(self, canister_reachable, canister, network):
         out, err, rc = self._run_shell("%ps", canister, network)
         assert rc == 0
-        assert "|" in out or "No tasks" in out or "ImportError" in out or "ValueError" in out
+        assert (
+            "|" in out
+            or "No tasks" in out
+            or "ImportError" in out
+            or "ValueError" in out
+        )
 
     def test_oneshot_local_command(self, canister_reachable, canister, network):
         out, err, rc = self._run_shell("!echo local-test", canister, network)
@@ -431,26 +454,32 @@ class TestOneshotMode:
 # File mode
 # ===========================================================================
 
+
 class TestFileMode:
     """Test basilisk shell with a script file argument."""
 
     def test_file_execution(self, canister_reachable, canister, network):
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".py", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write("print('from-file')\n")
             f.flush()
             tmppath = f.name
 
         try:
             cmd = [
-                sys.executable, "-m", "basilisk.shell",
-                "--canister", canister,
-                "--network", network,
+                sys.executable,
+                "-m",
+                "basilisk.shell",
+                "--canister",
+                canister,
+                "--network",
+                network,
                 tmppath,
             ]
             r = subprocess.run(
-                cmd, capture_output=True, text=True, timeout=120,
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=120,
                 cwd=os.path.join(os.path.dirname(__file__), ".."),
             )
             assert r.returncode == 0
@@ -460,13 +489,20 @@ class TestFileMode:
 
     def test_file_not_found(self, canister, network):
         cmd = [
-            sys.executable, "-m", "basilisk.shell",
-            "--canister", canister,
-            "--network", network,
+            sys.executable,
+            "-m",
+            "basilisk.shell",
+            "--canister",
+            canister,
+            "--network",
+            network,
             "/nonexistent/script.py",
         ]
         r = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=10,
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=10,
             cwd=os.path.join(os.path.dirname(__file__), ".."),
         )
         assert r.returncode != 0
@@ -477,19 +513,26 @@ class TestFileMode:
 # Pipe mode
 # ===========================================================================
 
+
 class TestPipeMode:
     """Test basilisk shell reading from stdin pipe."""
 
     def test_pipe_execution(self, canister_reachable, canister, network):
         cmd = [
-            sys.executable, "-m", "basilisk.shell",
-            "--canister", canister,
-            "--network", network,
+            sys.executable,
+            "-m",
+            "basilisk.shell",
+            "--canister",
+            canister,
+            "--network",
+            network,
         ]
         r = subprocess.run(
             cmd,
             input="print('from-pipe')\n",
-            capture_output=True, text=True, timeout=120,
+            capture_output=True,
+            text=True,
+            timeout=120,
             cwd=os.path.join(os.path.dirname(__file__), ".."),
         )
         assert r.returncode == 0
@@ -500,6 +543,7 @@ class TestPipeMode:
 # Watch mode
 # ===========================================================================
 
+
 class TestWatchMode:
     """Test basilisk shell --watch mode (file-based session)."""
 
@@ -508,16 +552,24 @@ class TestWatchMode:
         outbox = tempfile.mktemp(suffix="_outbox")
 
         cmd = [
-            sys.executable, "-m", "basilisk.shell",
-            "--canister", canister,
-            "--network", network,
-            "--watch", inbox,
-            "--outbox", outbox,
+            sys.executable,
+            "-m",
+            "basilisk.shell",
+            "--canister",
+            canister,
+            "--network",
+            network,
+            "--watch",
+            inbox,
+            "--outbox",
+            outbox,
         ]
 
         # Start basilisk shell in watch mode
         proc = subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             cwd=os.path.join(os.path.dirname(__file__), ".."),
         )
 
@@ -567,6 +619,7 @@ class TestWatchMode:
 # Edge cases and robustness
 # ===========================================================================
 
+
 class TestEdgeCases:
     """Stress tests and edge cases for reliability."""
 
@@ -615,7 +668,9 @@ class TestEdgeCases:
         for i in range(5):
             assert results[i] == str(i), f"Call {i} returned {results[i]!r}"
 
-    def test_import_nonexistent_module_raises(self, canister_reachable, canister, network):
+    def test_import_nonexistent_module_raises(
+        self, canister_reachable, canister, network
+    ):
         """Importing a truly nonexistent module should raise ModuleNotFoundError."""
         code = (
             "try:\n"
@@ -640,7 +695,9 @@ class TestEdgeCases:
         assert "module" in result
         assert '{"ok":true}' in result or '{"ok": true}' in result
 
-    def test_import_internal_underscore_module(self, canister_reachable, canister, network):
+    def test_import_internal_underscore_module(
+        self, canister_reachable, canister, network
+    ):
         """Internal _-prefixed modules should still be stubbable."""
         code = (
             "import _fake_internal_module\n"
@@ -654,12 +711,14 @@ class TestEdgeCases:
 # Database persistence — StableBTreeMap-backed storage
 # ===========================================================================
 
+
 class TestDatabasePersistence:
     """Test that basilisk.db entities use persistent StableBTreeMap storage."""
 
     def test_entity_persists_across_calls(self, canister_reachable, canister, network):
         """Create an entity in one call, verify it exists in a subsequent call."""
         import time
+
         tag = f"persist_{int(time.time())}"
 
         # Create entity

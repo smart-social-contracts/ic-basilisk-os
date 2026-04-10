@@ -71,6 +71,7 @@ class TestPreTransferHookDispatch:
 
     def test_hook_returning_string_blocks(self):
         """A hook that returns a string error should block the transfer."""
+
         def block_hook(**kwargs):
             return "Access denied: no permission"
 
@@ -87,6 +88,7 @@ class TestPreTransferHookDispatch:
 
     def test_hook_returning_dict_blocks(self):
         """A hook that returns a dict error should block the transfer."""
+
         def block_hook(**kwargs):
             return {"code": "UNAUTHORIZED", "message": "Not allowed"}
 
@@ -134,6 +136,7 @@ class TestPreTransferHookDispatch:
 
     def test_hook_can_be_replaced(self):
         """The hook can be swapped at runtime (e.g., different realm policies)."""
+
         def hook_v1(**kwargs):
             return "blocked by v1"
 
@@ -141,12 +144,28 @@ class TestPreTransferHookDispatch:
             return None
 
         Wallet._pre_transfer_hook = hook_v1
-        assert Wallet._pre_transfer_hook(token_name="X", to_principal="Y", amount=1,
-                                          from_subaccount=None, to_subaccount=None) == "blocked by v1"
+        assert (
+            Wallet._pre_transfer_hook(
+                token_name="X",
+                to_principal="Y",
+                amount=1,
+                from_subaccount=None,
+                to_subaccount=None,
+            )
+            == "blocked by v1"
+        )
 
         Wallet._pre_transfer_hook = hook_v2
-        assert Wallet._pre_transfer_hook(token_name="X", to_principal="Y", amount=1,
-                                          from_subaccount=None, to_subaccount=None) is None
+        assert (
+            Wallet._pre_transfer_hook(
+                token_name="X",
+                to_principal="Y",
+                amount=1,
+                from_subaccount=None,
+                to_subaccount=None,
+            )
+            is None
+        )
 
 
 class TestPreTransferHookInTransfer:
@@ -158,6 +177,7 @@ class TestPreTransferHookInTransfer:
 
     def test_transfer_blocked_by_hook_returns_err(self):
         """When the hook blocks, _transfer must return {"err": ...} without yielding."""
+
         def deny_all(**kwargs):
             return "Denied by policy"
 
@@ -175,13 +195,16 @@ class TestPreTransferHookInTransfer:
             result = next(gen)
             # If we get here, gen yielded something — that means the hook didn't block.
             # This should NOT happen.
-            pytest.fail(f"Expected StopIteration (hook should block), but got yielded value: {result}")
+            pytest.fail(
+                f"Expected StopIteration (hook should block), but got yielded value: {result}"
+            )
         except StopIteration as e:
             # The return value of the generator is in e.value
             assert e.value == {"err": "Denied by policy"}
 
     def test_transfer_allowed_by_hook_proceeds_to_yield(self):
         """When hook returns None, _transfer should proceed past the hook (and yield for ledger call)."""
+
         def allow_all(**kwargs):
             return None
 

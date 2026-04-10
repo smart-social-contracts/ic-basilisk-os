@@ -9,9 +9,25 @@ The frozen_stdlib_preamble automatically provides the in-memory filesystem (memf
 ic-python-db provides the entity ORM for task/entity tests.
 """
 
-from basilisk import query, update, text, ic, Async, Tuple, match, CallResult, Principal, StableBTreeMap, GuardResult
-from basilisk.canisters.management import management_canister, HttpResponse, HttpTransformArgs
 import ic_python_db  # noqa: kept for module bundler dependency tracing
+from basilisk import (
+    Async,
+    CallResult,
+    GuardResult,
+    Principal,
+    StableBTreeMap,
+    Tuple,
+    ic,
+    match,
+    query,
+    text,
+    update,
+)
+from basilisk.canisters.management import (
+    HttpResponse,
+    HttpTransformArgs,
+    management_canister,
+)
 from basilisk.db import Database
 
 # ---------------------------------------------------------------------------
@@ -31,7 +47,9 @@ _shell_ns_by_principal = {}
 def guard_against_non_controllers() -> GuardResult:
     if ic.is_controller(ic.caller()):
         return {"Ok": None}
-    return {"Err": "Not Authorized: only controllers of this canister may call this method"}
+    return {
+        "Err": "Not Authorized: only controllers of this canister may call this method"
+    }
 
 
 @update(guard=guard_against_non_controllers)
@@ -49,9 +67,11 @@ def execute_code_shell(code: str) -> str:
     caller = str(ic.caller())
     if caller not in _shell_ns_by_principal:
         _shell_ns_by_principal[caller] = {"__builtins__": __builtins__}
-        _shell_ns_by_principal[caller].update({
-            "ic": ic,
-        })
+        _shell_ns_by_principal[caller].update(
+            {
+                "ic": ic,
+            }
+        )
         _shell_ns_by_principal[caller]["basilisk"] = __import__("basilisk")
     ns = _shell_ns_by_principal[caller]
 
@@ -85,6 +105,7 @@ def whoami() -> str:
 # ---------------------------------------------------------------------------
 # HTTP outcall support
 # ---------------------------------------------------------------------------
+
 
 @query
 def http_transform(args: HttpTransformArgs) -> HttpResponse:
@@ -125,6 +146,7 @@ def download_to_file(url: str, dest: str) -> Async[str]:
         except UnicodeDecodeError as e:
             return f"Error: failed to decode response as UTF-8: {e}"
         import os
+
         parent = os.path.dirname(dest)
         if parent and parent != "/":
             os.makedirs(parent, exist_ok=True)

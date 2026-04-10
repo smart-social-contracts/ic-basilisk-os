@@ -52,15 +52,16 @@ import subprocess
 import sys
 import time as _time
 
-
 # ---------------------------------------------------------------------------
 # Version / git info (client-side)
 # ---------------------------------------------------------------------------
+
 
 def _get_basilisk_version() -> str:
     """Return the installed basilisk package version."""
     try:
         from basilisk import __version__
+
         return __version__
     except Exception:
         return "unknown"
@@ -74,7 +75,9 @@ def _get_git_info() -> dict:
     try:
         r = subprocess.run(
             ["git", "log", "-1", "--format=%H %aI"],
-            capture_output=True, text=True, timeout=5,
+            capture_output=True,
+            text=True,
+            timeout=5,
             cwd=repo_dir,
         )
         if r.returncode == 0:
@@ -91,6 +94,7 @@ def _get_git_info() -> dict:
 # Candid parsing
 # ---------------------------------------------------------------------------
 
+
 def _parse_candid(output: str) -> str:
     """Parse a Candid-encoded string response from dfx into plain text."""
     output = output.strip()
@@ -106,6 +110,7 @@ def _parse_candid(output: str) -> str:
 # ---------------------------------------------------------------------------
 # Canister communication
 # ---------------------------------------------------------------------------
+
 
 def _is_transient_dfx_error(stderr: str) -> bool:
     s = (stderr or "").lower()
@@ -152,6 +157,7 @@ def _run_dfx_with_retries(
         _time.sleep(min(2**attempt, 8))
 
     return last  # type: ignore[return-value]
+
 
 def canister_exec(code: str, canister: str, network: str = None) -> str:
     """Send Python code to the canister and return the output."""
@@ -475,7 +481,7 @@ def _db_import_code(b64_data: str) -> str:
         "        _ok += 1\n"
         "    except Exception as _e:\n"
         "        _fail += 1\n"
-        "        _errors.append(f'{_rec.get(\"_type\",\"?\")}#{_rec.get(\"_id\",\"?\")}: {_e}')\n"
+        '        _errors.append(f\'{_rec.get("_type","?")}#{_rec.get("_id","?")}: {_e}\')\n'
         "_Entity._context.clear()\n"
         "print(f'Imported {_ok} entities ({_fail} failed)')\n"
         "if _errors:\n"
@@ -562,7 +568,9 @@ def _handle_db(args: str, canister: str, network: str) -> str:
             show_parts = [rest, rest2]
         if len(show_parts) < 2:
             return "Usage: %db show <Type> <id>"
-        return canister_exec(_db_show_code(show_parts[0], show_parts[1]), canister, network)
+        return canister_exec(
+            _db_show_code(show_parts[0], show_parts[1]), canister, network
+        )
 
     if subcmd == "search":
         if not rest:
@@ -575,7 +583,11 @@ def _handle_db(args: str, canister: str, network: str) -> str:
             return "Usage: %db search <Type> <field>=<value>"
         entity_type = search_parts[0]
         field, _, value = search_parts[1].partition("=")
-        return canister_exec(_db_search_code(entity_type, field.strip(), value.strip()), canister, network)
+        return canister_exec(
+            _db_search_code(entity_type, field.strip(), value.strip()),
+            canister,
+            network,
+        )
 
     if subcmd == "export":
         if not rest:
@@ -595,14 +607,17 @@ def _handle_db(args: str, canister: str, network: str) -> str:
             if line.startswith("__DB_EXPORT__"):
                 import base64
                 import json
-                payload = base64.b64decode(line[len("__DB_EXPORT__"):]).decode()
+
+                payload = base64.b64decode(line[len("__DB_EXPORT__") :]).decode()
                 records = json.loads(payload)
 
                 if out_file:
                     os.makedirs(os.path.dirname(out_file) or ".", exist_ok=True)
                     with open(out_file, "w") as f:
                         json.dump(records, f, indent=2, default=str)
-                    return f"Exported {len(records)} {entity_type} entities -> {out_file}"
+                    return (
+                        f"Exported {len(records)} {entity_type} entities -> {out_file}"
+                    )
                 else:
                     return json.dumps(records, indent=2, default=str)
 
@@ -624,6 +639,7 @@ def _handle_db(args: str, canister: str, network: str) -> str:
 
         # Validate JSON
         import json
+
         try:
             records = json.loads(data)
         except json.JSONDecodeError as e:
@@ -639,8 +655,9 @@ def _handle_db(args: str, canister: str, network: str) -> str:
         all_errors = []
 
         for i in range(0, len(records), batch_size):
-            batch = records[i:i + batch_size]
+            batch = records[i : i + batch_size]
             import base64
+
             b64 = base64.b64encode(json.dumps(batch, default=str).encode()).decode()
             result = canister_exec(_db_import_code(b64), canister, network)
             if result:
@@ -648,6 +665,7 @@ def _handle_db(args: str, canister: str, network: str) -> str:
                     if line.startswith("Imported "):
                         # Parse "Imported N entities (M failed)"
                         import re as _re
+
                         m = _re.match(r"Imported (\d+) entities \((\d+) failed\)", line)
                         if m:
                             total_ok += int(m.group(1))
@@ -655,7 +673,9 @@ def _handle_db(args: str, canister: str, network: str) -> str:
                     elif line.strip().startswith("ERROR:"):
                         all_errors.append(line.strip())
 
-        summary = f"Imported {total_ok} entities ({total_fail} failed) from {import_file}"
+        summary = (
+            f"Imported {total_ok} entities ({total_fail} failed) from {import_file}"
+        )
         if all_errors:
             summary += "\n" + "\n".join(all_errors[:10])
         return summary
@@ -668,7 +688,9 @@ def _handle_db(args: str, canister: str, network: str) -> str:
             del_parts = [rest, rest2]
         if len(del_parts) < 2:
             return "Usage: %db delete <Type> <id>"
-        return canister_exec(_db_delete_code(del_parts[0], del_parts[1]), canister, network)
+        return canister_exec(
+            _db_delete_code(del_parts[0], del_parts[1]), canister, network
+        )
 
     return f"Unknown db command: {subcmd}\n\n" + _DB_USAGE
 
@@ -692,7 +714,8 @@ def _canister_info(canister: str, network: str) -> str:
         if ln.startswith("__INFO__"):
             try:
                 import json
-                info = json.loads(ln[len("__INFO__"):])
+
+                info = json.loads(ln[len("__INFO__") :])
             except Exception:
                 pass
             break
@@ -853,9 +876,11 @@ _TASK_FIND = (
 def _task_list_code() -> str:
     """Code for: %task list  (also %task, %ps)"""
     return (
-        _TASK_RESOLVE + _TASK_UNAVAILABLE +
-        _FMT_NS + _LAST_EXEC_TS +
-        "if 'Task' in dir():\n"
+        _TASK_RESOLVE
+        + _TASK_UNAVAILABLE
+        + _FMT_NS
+        + _LAST_EXEC_TS
+        + "if 'Task' in dir():\n"
         "    _any = False\n"
         "    for _t in Task.instances():\n"
         "        _any = True\n"
@@ -879,20 +904,26 @@ def _task_create_code(rest: str) -> str:
     Without --code/--file only a bare Task (+ optional schedule) is created.
     """
     # Parse --file <path>
-    file_match = re.search(r'--file\s+(\S+)', rest)
+    file_match = re.search(r"--file\s+(\S+)", rest)
     task_file = None
     if file_match:
         task_file = file_match.group(1)
-        rest = rest[:file_match.start()] + rest[file_match.end():]
+        rest = rest[: file_match.start()] + rest[file_match.end() :]
 
     # Parse --code "..." (supports single or double quotes)
-    code_match = re.search(r"""--code\s+(?:"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)')""", rest)
+    code_match = re.search(
+        r"""--code\s+(?:"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)')""", rest
+    )
     task_code = None
     if code_match:
-        task_code = code_match.group(1) if code_match.group(1) is not None else code_match.group(2)
+        task_code = (
+            code_match.group(1)
+            if code_match.group(1) is not None
+            else code_match.group(2)
+        )
         # Unescape
         task_code = task_code.replace('\\"', '"').replace("\\'", "'")
-        rest = rest[:code_match.start()] + rest[code_match.end():]
+        rest = rest[: code_match.start()] + rest[code_match.end() :]
 
     # --file generates an exec(open(...).read()) wrapper
     if task_file and not task_code:
@@ -900,9 +931,9 @@ def _task_create_code(rest: str) -> str:
         task_code = f"exec(open('{esc_file}').read())"
 
     # Parse "every <N>s"
-    every_match = re.search(r'every\s+(\d+)s?', rest)
+    every_match = re.search(r"every\s+(\d+)s?", rest)
     interval = int(every_match.group(1)) if every_match else None
-    name = re.sub(r'\s*every\s+\d+s?', '', rest).strip()
+    name = re.sub(r"\s*every\s+\d+s?", "", rest).strip()
 
     if not name:
         return None  # signal usage error
@@ -910,8 +941,7 @@ def _task_create_code(rest: str) -> str:
     esc_name = name.replace("'", "\\'")
 
     code = (
-        _TASK_RESOLVE + _TASK_UNAVAILABLE +
-        "if 'Task' in dir():\n"
+        _TASK_RESOLVE + _TASK_UNAVAILABLE + "if 'Task' in dir():\n"
         f"    _t = Task(name='{esc_name}', status='pending')\n"
     )
 
@@ -920,6 +950,7 @@ def _task_create_code(rest: str) -> str:
     # Candid text encoding (which interprets backslashes as escapes).
     if task_code is not None:
         import base64
+
         b64 = base64.b64encode(task_code.encode()).decode()
         code += "    import base64 as _b64\n"
         code += f"    _code_bytes = _b64.b64decode('{b64}')\n"
@@ -965,10 +996,7 @@ def _command_to_code(cmd: str):
             dest = "/" + dest
         esc_url = url.replace("'", "\\'")
         esc_dest = dest.replace("'", "\\'")
-        code = (
-            "def async_task():\n"
-            f"    yield from wget('{esc_url}', '{esc_dest}')\n"
-        )
+        code = "def async_task():\n" f"    yield from wget('{esc_url}', '{esc_dest}')\n"
         return code, True
 
     if verb == "run" and len(parts) == 2:
@@ -991,37 +1019,47 @@ def _task_add_step_code(rest: str) -> str:
     --command translates a simple command (wget, run) into the appropriate code.
     """
     # Parse --async flag
-    is_async = '--async' in rest
+    is_async = "--async" in rest
     if is_async:
-        rest = rest.replace('--async', '', 1).strip()
+        rest = rest.replace("--async", "", 1).strip()
 
     # Parse --delay N
-    delay_match = re.search(r'--delay\s+(\d+)', rest)
+    delay_match = re.search(r"--delay\s+(\d+)", rest)
     delay = int(delay_match.group(1)) if delay_match else 0
     if delay_match:
-        rest = rest[:delay_match.start()] + rest[delay_match.end():]
+        rest = rest[: delay_match.start()] + rest[delay_match.end() :]
 
     # Parse --file <path>
-    file_match = re.search(r'--file\s+(\S+)', rest)
+    file_match = re.search(r"--file\s+(\S+)", rest)
     task_file = None
     if file_match:
         task_file = file_match.group(1)
-        rest = rest[:file_match.start()] + rest[file_match.end():]
+        rest = rest[: file_match.start()] + rest[file_match.end() :]
 
     # Parse --command "..." (supports single or double quotes)
-    cmd_match = re.search(r"""--command\s+(?:"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)')""", rest)
+    cmd_match = re.search(
+        r"""--command\s+(?:"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)')""", rest
+    )
     task_command = None
     if cmd_match:
-        task_command = cmd_match.group(1) if cmd_match.group(1) is not None else cmd_match.group(2)
-        rest = rest[:cmd_match.start()] + rest[cmd_match.end():]
+        task_command = (
+            cmd_match.group(1) if cmd_match.group(1) is not None else cmd_match.group(2)
+        )
+        rest = rest[: cmd_match.start()] + rest[cmd_match.end() :]
 
     # Parse --code "..." (supports single or double quotes)
-    code_match = re.search(r"""--code\s+(?:"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)')""", rest)
+    code_match = re.search(
+        r"""--code\s+(?:"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)')""", rest
+    )
     task_code = None
     if code_match:
-        task_code = code_match.group(1) if code_match.group(1) is not None else code_match.group(2)
+        task_code = (
+            code_match.group(1)
+            if code_match.group(1) is not None
+            else code_match.group(2)
+        )
         task_code = task_code.replace('\\"', '"').replace("\\'", "'")
-        rest = rest[:code_match.start()] + rest[code_match.end():]
+        rest = rest[: code_match.start()] + rest[code_match.end() :]
 
     # --command translates a simple command into code + async flag
     if task_command and not task_code:
@@ -1045,12 +1083,14 @@ def _task_add_step_code(rest: str) -> str:
     esc_tid = tid.replace("'", "\\'")
 
     import base64
+
     b64 = base64.b64encode(task_code.encode()).decode()
     code = (
-        _TASK_RESOLVE + _TASK_UNAVAILABLE +
-        "if 'Task' in dir():\n"
-        + _TASK_FIND.format(tid=esc_tid) +
-        "    if not _t:\n"
+        _TASK_RESOLVE
+        + _TASK_UNAVAILABLE
+        + "if 'Task' in dir():\n"
+        + _TASK_FIND.format(tid=esc_tid)
+        + "    if not _t:\n"
         f"        print('Task not found: {esc_tid}')\n"
         "    else:\n"
         "        import base64 as _b64\n"
@@ -1071,11 +1111,13 @@ def _task_info_code(tid: str) -> str:
     """Code for: %task info <id|name>"""
     esc_tid = tid.replace("'", "\\'")
     return (
-        _TASK_RESOLVE + _TASK_UNAVAILABLE +
-        _FMT_NS + _LAST_EXEC_TS +
-        "if 'Task' in dir():\n"
-        + _TASK_FIND.format(tid=esc_tid) +
-        "    if not _t:\n"
+        _TASK_RESOLVE
+        + _TASK_UNAVAILABLE
+        + _FMT_NS
+        + _LAST_EXEC_TS
+        + "if 'Task' in dir():\n"
+        + _TASK_FIND.format(tid=esc_tid)
+        + "    if not _t:\n"
         f"        print('Task not found: {esc_tid}')\n"
         "    else:\n"
         "        print(f'Task {_t._id}: {_t.name}')\n"
@@ -1108,11 +1150,13 @@ def _task_log_code(tid: str) -> str:
     """Code for: %task log <id|name>"""
     esc_tid = tid.replace("'", "\\'")
     return (
-        _TASK_RESOLVE + _TASK_UNAVAILABLE +
-        _FMT_NS + _FMT_S +
-        "if 'Task' in dir():\n"
-        + _TASK_FIND.format(tid=esc_tid) +
-        "    if not _t:\n"
+        _TASK_RESOLVE
+        + _TASK_UNAVAILABLE
+        + _FMT_NS
+        + _FMT_S
+        + "if 'Task' in dir():\n"
+        + _TASK_FIND.format(tid=esc_tid)
+        + "    if not _t:\n"
         f"        print('Task not found: {esc_tid}')\n"
         "    else:\n"
         "        try:\n"
@@ -1133,7 +1177,7 @@ def _task_log_code(tid: str) -> str:
         "                if len(_e.result or '') > 200: _res += '...'\n"
         "                _sa = getattr(_e, 'started_at', 0) or 0\n"
         "                _dt = _fmt_s(_sa) if _sa else _fmt_ns(getattr(_e, '_timestamp_created', None) or getattr(_e, '_timestamp_updated', None))\n"
-        '                print(f\'  #{_e._id} | {_e.status or "idle":<10} | {_dt} | {_e.name}\')\n'
+        "                print(f'  #{_e._id} | {_e.status or \"idle\":<10} | {_dt} | {_e.name}')\n"
         "                if _res: print(f'    {_res}')\n"
         "                if _get_logs:\n"
         "                    _log_name = 'task_%s_%s' % (_e.task._id, _e._id)\n"
@@ -1156,10 +1200,11 @@ def _task_run_code(tid: str) -> str:
     """
     esc_tid = tid.replace("'", "\\'")
     return (
-        _TASK_RESOLVE + _TASK_UNAVAILABLE +
-        "if 'Task' in dir():\n"
-        + _TASK_FIND.format(tid=esc_tid) +
-        "    if not _t:\n"
+        _TASK_RESOLVE
+        + _TASK_UNAVAILABLE
+        + "if 'Task' in dir():\n"
+        + _TASK_FIND.format(tid=esc_tid)
+        + "    if not _t:\n"
         f"        print('Task not found: {esc_tid}')\n"
         "    else:\n"
         "        _steps = list(_t.steps)\n"
@@ -1220,10 +1265,11 @@ def _task_start_code(tid: str) -> str:
     """
     esc_tid = tid.replace("'", "\\'")
     return (
-        _TASK_RESOLVE + _TASK_UNAVAILABLE +
-        "if 'Task' in dir():\n"
-        + _TASK_FIND.format(tid=esc_tid) +
-        "    if not _t:\n"
+        _TASK_RESOLVE
+        + _TASK_UNAVAILABLE
+        + "if 'Task' in dir():\n"
+        + _TASK_FIND.format(tid=esc_tid)
+        + "    if not _t:\n"
         f"        print('Task not found: {esc_tid}')\n"
         "    else:\n"
         "        _t.status = 'pending'\n"
@@ -1372,16 +1418,16 @@ def _task_start_code(tid: str) -> str:
         "                        return\n"
         "                    try:\n"
         "                        try:\n"
-"                            from basilisk.logging import get_logger as _get_logger\n"
-"                            _logger = _get_logger(f'task_{_task_id}_{_te._id}')\n"
-"                        except Exception:\n"
-"                            class _Logger:\n"
-"                                def info(self, m): ic.print(str(m))\n"
-"                                def warning(self, m): ic.print(f'WARN: {m}')\n"
-"                                def error(self, m): ic.print(f'ERROR: {m}')\n"
-"                                def debug(self, m): pass\n"
-"                            _logger = _Logger()\n"
-"                        _ns = {'ic': ic, 'Task': Task, 'TaskExecution': TaskExecution, 'wget': wget, 'run': run, 'logger': _logger}\n"
+        "                            from basilisk.logging import get_logger as _get_logger\n"
+        "                            _logger = _get_logger(f'task_{_task_id}_{_te._id}')\n"
+        "                        except Exception:\n"
+        "                            class _Logger:\n"
+        "                                def info(self, m): ic.print(str(m))\n"
+        "                                def warning(self, m): ic.print(f'WARN: {m}')\n"
+        "                                def error(self, m): ic.print(f'ERROR: {m}')\n"
+        "                                def debug(self, m): pass\n"
+        "                            _logger = _Logger()\n"
+        "                        _ns = {'ic': ic, 'Task': Task, 'TaskExecution': TaskExecution, 'wget': wget, 'run': run, 'logger': _logger}\n"
         "                        exec(_code_str, _ns)\n"
         "                        if 'async_task' not in _ns:\n"
         "                            _te.status = 'failed'\n"
@@ -1444,10 +1490,11 @@ def _task_stop_code(tid: str) -> str:
     """Code for: %task stop <id|name>  (also %kill)"""
     esc_tid = tid.replace("'", "\\'")
     return (
-        _TASK_RESOLVE + _TASK_UNAVAILABLE +
-        "if 'Task' in dir():\n"
-        + _TASK_FIND.format(tid=esc_tid) +
-        "    if not _t:\n"
+        _TASK_RESOLVE
+        + _TASK_UNAVAILABLE
+        + "if 'Task' in dir():\n"
+        + _TASK_FIND.format(tid=esc_tid)
+        + "    if not _t:\n"
         f"        print('Task not found: {esc_tid}')\n"
         "    else:\n"
         "        _t.status = 'cancelled'\n"
@@ -1460,10 +1507,11 @@ def _task_delete_code(tid: str) -> str:
     """Code for: %task delete <id|name>"""
     esc_tid = tid.replace("'", "\\'")
     return (
-        _TASK_RESOLVE + _TASK_UNAVAILABLE +
-        "if 'Task' in dir():\n"
-        + _TASK_FIND.format(tid=esc_tid) +
-        "    if not _t:\n"
+        _TASK_RESOLVE
+        + _TASK_UNAVAILABLE
+        + "if 'Task' in dir():\n"
+        + _TASK_FIND.format(tid=esc_tid)
+        + "    if not _t:\n"
         f"        print('Task not found: {esc_tid}')\n"
         "    else:\n"
         "        _name = _t.name\n"
@@ -1488,10 +1536,11 @@ def _task_retry_code(tid: str) -> str:
     """
     esc_tid = tid.replace("'", "\\'")
     return (
-        _TASK_RESOLVE + _TASK_UNAVAILABLE +
-        "if 'Task' in dir():\n"
-        + _TASK_FIND.format(tid=esc_tid) +
-        "    if not _t:\n"
+        _TASK_RESOLVE
+        + _TASK_UNAVAILABLE
+        + "if 'Task' in dir():\n"
+        + _TASK_FIND.format(tid=esc_tid)
+        + "    if not _t:\n"
         f"        print('Task not found: {esc_tid}')\n"
         "    else:\n"
         "        _t.status = 'pending'\n"
@@ -1510,10 +1559,11 @@ def _task_resume_code(tid: str) -> str:
     """
     esc_tid = tid.replace("'", "\\'")
     return (
-        _TASK_RESOLVE + _TASK_UNAVAILABLE +
-        "if 'Task' in dir():\n"
-        + _TASK_FIND.format(tid=esc_tid) +
-        "    if not _t:\n"
+        _TASK_RESOLVE
+        + _TASK_UNAVAILABLE
+        + "if 'Task' in dir():\n"
+        + _TASK_FIND.format(tid=esc_tid)
+        + "    if not _t:\n"
         f"        print('Task not found: {esc_tid}')\n"
         "    else:\n"
         "        _steps = list(_t.steps)\n"
@@ -1535,19 +1585,19 @@ def _task_resume_code(tid: str) -> str:
 
 _TASK_USAGE = (
     "Usage:\n"
-    '  %task                                                    List all tasks\n'
-    '  %task list                                               List all tasks\n'
+    "  %task                                                    List all tasks\n"
+    "  %task list                                               List all tasks\n"
     '  %task create <name> [every Ns] [--code "..."|--file <f>] Create a task\n'
     '  %task add-step <id|name> [--code "..."|--file <f>]       Add step to task\n'
     '           [--command "..."] [--delay N] [--async]\n'
-    '  %task info <id|name>                                     Show task details\n'
-    '  %task log <id|name> [--follow|-f]                        Show execution history\n'
-    '  %task run <id|name>                                      Execute task code now\n'
-    '  %task start <id|name>                                    Start via timer\n'
-    '  %task stop <id|name>                                     Stop a task\n'
-    '  %task retry <id|name>                                    Reset all steps and restart\n'
-    '  %task resume <id|name>                                   Resume from first failed step\n'
-    '  %task delete <id|name>                                   Delete task and records'
+    "  %task info <id|name>                                     Show task details\n"
+    "  %task log <id|name> [--follow|-f]                        Show execution history\n"
+    "  %task run <id|name>                                      Execute task code now\n"
+    "  %task start <id|name>                                    Start via timer\n"
+    "  %task stop <id|name>                                     Stop a task\n"
+    "  %task retry <id|name>                                    Reset all steps and restart\n"
+    "  %task resume <id|name>                                   Resume from first failed step\n"
+    "  %task delete <id|name>                                   Delete task and records"
 )
 
 
@@ -1558,11 +1608,11 @@ _TASK_USAGE = (
 # Well-known ICRC-1 token metadata — derived from the canonical registry
 from .tokens import WELL_KNOWN_TOKENS as _WKT
 
-_LEDGER_IDS     = {k.lower(): v["ledger"]   for k, v in _WKT.items()}
-_LEDGER_FEES    = {k.lower(): v["fee"]      for k, v in _WKT.items()}
+_LEDGER_IDS = {k.lower(): v["ledger"] for k, v in _WKT.items()}
+_LEDGER_FEES = {k.lower(): v["fee"] for k, v in _WKT.items()}
 _LEDGER_DECIMALS = {k.lower(): v["decimals"] for k, v in _WKT.items()}
-_LEDGER_SYMBOLS = {k.lower(): k             for k in _WKT}
-_INDEX_IDS      = {k.lower(): v["indexer"]  for k, v in _WKT.items()}
+_LEDGER_SYMBOLS = {k.lower(): k for k in _WKT}
+_INDEX_IDS = {k.lower(): v["indexer"] for k, v in _WKT.items()}
 
 _WALLET_HISTORY_PATH = "/wallet_history.jsonl"
 
@@ -1605,11 +1655,13 @@ def _candid_subaccount(hex_str):
         bytes.fromhex(hex_str)
     except ValueError:
         return None
-    blob = "blob \"" + "".join(f"\\{hex_str[i:i+2]}" for i in range(0, 64, 2)) + "\""
+    blob = 'blob "' + "".join(f"\\{hex_str[i:i+2]}" for i in range(0, 64, 2)) + '"'
     return f"opt {blob}"
 
 
-def _wallet_balance(token: str, canister: str, network: str, subaccount: str = None) -> str:
+def _wallet_balance(
+    token: str, canister: str, network: str, subaccount: str = None
+) -> str:
     """Query the token ledger for the canister's balance via dfx (client-side)."""
     ledger = _LEDGER_IDS.get(token)
     if not ledger:
@@ -1625,18 +1677,22 @@ def _wallet_balance(token: str, canister: str, network: str, subaccount: str = N
     cmd = ["dfx", "canister", "call", "--query", "--output", "json"]
     if network:
         cmd.extend(["--network", network])
-    cmd.extend([
-        ledger, "icrc1_balance_of",
-        f'(record {{ owner = principal "{canister}"; subaccount = {sub_candid} }})',
-    ])
+    cmd.extend(
+        [
+            ledger,
+            "icrc1_balance_of",
+            f'(record {{ owner = principal "{canister}"; subaccount = {sub_candid} }})',
+        ]
+    )
 
     try:
         import json as _json
+
         r = _run_dfx_with_retries(cmd, timeout_s=30)
         if r.returncode != 0:
             return f"[dfx error] {r.stderr.strip()}"
-        amount = int(_json.loads(r.stdout.strip()).replace('_', ''))
-        human = amount / (10 ** decimals)
+        amount = int(_json.loads(r.stdout.strip()).replace("_", ""))
+        human = amount / (10**decimals)
         return f"{amount} e{decimals} ({human:.{decimals}f} {symbol})"
     except subprocess.TimeoutExpired:
         return "[error] balance query timed out"
@@ -1650,22 +1706,28 @@ def _wallet_deposit(token: str, canister: str, subaccount: str = None) -> str:
     sub_candid = _candid_subaccount(subaccount)
     if sub_candid is None:
         return f"Invalid subaccount hex: {subaccount}"
-    sub_display = f"  Subaccount: {subaccount}\n" if subaccount else "  (no subaccount)\n"
+    sub_display = (
+        f"  Subaccount: {subaccount}\n" if subaccount else "  (no subaccount)\n"
+    )
     return (
         f"To deposit {symbol} to this canister, transfer to:\n"
-        f"  Principal: {canister}\n"
-        + sub_display +
-        f"\n"
+        f"  Principal: {canister}\n" + sub_display + f"\n"
         f"From dfx:\n"
         f'  dfx canister call {_LEDGER_IDS.get(token, "<ledger>")} icrc1_transfer \\\n'
         f'    \'(record {{ to = record {{ owner = principal "{canister}"; subaccount = {sub_candid} }};'
-        f' amount = <AMOUNT> : nat; fee = opt ({_LEDGER_FEES.get(token, 0)} : nat);'
+        f" amount = <AMOUNT> : nat; fee = opt ({_LEDGER_FEES.get(token, 0)} : nat);"
         f" memo = null; from_subaccount = null; created_at_time = null }})'"
     )
 
 
-def _wallet_transfer(token: str, rest: str, canister: str, network: str,
-                     to_subaccount: str = None, from_subaccount: str = None) -> str:
+def _wallet_transfer(
+    token: str,
+    rest: str,
+    canister: str,
+    network: str,
+    to_subaccount: str = None,
+    from_subaccount: str = None,
+) -> str:
     """Transfer tokens from the canister to a target principal.
 
     Uses ic.set_timer(0, generator_callback) so the Rust runtime drives the
@@ -1687,8 +1749,8 @@ def _wallet_transfer(token: str, rest: str, canister: str, network: str,
 
     # Allow human-readable amounts like "0.001" or raw integers
     try:
-        if '.' in amount_str:
-            amount = int(float(amount_str) * (10 ** decimals))
+        if "." in amount_str:
+            amount = int(float(amount_str) * (10**decimals))
         else:
             amount = int(amount_str)
     except ValueError:
@@ -1697,7 +1759,7 @@ def _wallet_transfer(token: str, rest: str, canister: str, network: str,
     if amount <= 0:
         return "Amount must be positive"
 
-    human = amount / (10 ** decimals)
+    human = amount / (10**decimals)
 
     to_sub_candid = _candid_subaccount(to_subaccount)
     if to_sub_candid is None:
@@ -1749,10 +1811,12 @@ def _wallet_transfer(token: str, rest: str, canister: str, network: str,
 
     # Send the code to canister
     result = canister_exec(transfer_code, canister, network)
-    if result is None or 'WALLET_TRANSFER_INITIATED' not in (result or ''):
+    if result is None or "WALLET_TRANSFER_INITIATED" not in (result or ""):
         return f"[error] failed to initiate transfer: {result}"
 
-    print(f"Transferring {human:.{decimals}f} {symbol} ({amount} e{decimals}) to {target}...")
+    print(
+        f"Transferring {human:.{decimals}f} {symbol} ({amount} e{decimals}) to {target}..."
+    )
     sys.stdout.flush()
 
     # Poll for result (the timer fires almost immediately)
@@ -1765,26 +1829,30 @@ def _wallet_transfer(token: str, rest: str, canister: str, network: str,
     )
 
     import json
+
     for _ in range(15):
         _time.sleep(2)
         poll_result = canister_exec(poll_code, canister, network)
-        if poll_result and 'WALLET_RESULT:' in poll_result:
-            json_str = poll_result.split('WALLET_RESULT:', 1)[1].strip()
+        if poll_result and "WALLET_RESULT:" in poll_result:
+            json_str = poll_result.split("WALLET_RESULT:", 1)[1].strip()
             try:
                 data = json.loads(json_str)
-                if data.get('ok'):
+                if data.get("ok"):
                     return f"Transfer successful: {data.get('response', '')}"
                 else:
                     return f"Transfer failed: {data.get('error', 'unknown error')}"
             except json.JSONDecodeError:
                 return f"Transfer result: {json_str}"
 
-    return "[timeout] Transfer initiated but result not yet available. Use: %wallet result"
+    return (
+        "[timeout] Transfer initiated but result not yet available. Use: %wallet result"
+    )
 
 
 def _wallet_result(canister: str, network: str) -> str:
     """Check the result of the last wallet transfer."""
     import json
+
     poll_code = (
         "try:\n"
         "    with open('/tmp/_wallet_result.txt', 'r') as _f:\n"
@@ -1793,11 +1861,11 @@ def _wallet_result(canister: str, network: str) -> str:
         "    print('No pending wallet result.')\n"
     )
     result = canister_exec(poll_code, canister, network)
-    if result and 'WALLET_RESULT:' in result:
-        json_str = result.split('WALLET_RESULT:', 1)[1].strip()
+    if result and "WALLET_RESULT:" in result:
+        json_str = result.split("WALLET_RESULT:", 1)[1].strip()
         try:
             data = json.loads(json_str)
-            if data.get('ok'):
+            if data.get("ok"):
                 return f"Last transfer: OK — {data.get('response', '')}"
             else:
                 return f"Last transfer: FAILED — {data.get('error', 'unknown')}"
@@ -1806,8 +1874,9 @@ def _wallet_result(canister: str, network: str) -> str:
     return result or "No wallet result found."
 
 
-def _wallet_history(token: str, canister: str, network: str, count: int = 10,
-                    subaccount: str = None) -> str:
+def _wallet_history(
+    token: str, canister: str, network: str, count: int = 10, subaccount: str = None
+) -> str:
     """Query the on-chain Index canister for complete transaction history."""
     import datetime
     import json as _json
@@ -1826,11 +1895,14 @@ def _wallet_history(token: str, canister: str, network: str, count: int = 10,
     cmd = ["dfx", "canister", "call", "--query", "--output", "json"]
     if network:
         cmd.extend(["--network", network])
-    cmd.extend([
-        index, "get_account_transactions",
-        f'(record {{ max_results = {count} : nat; start = null;'
-        f' account = record {{ owner = principal "{canister}"; subaccount = {sub_candid} }} }})',
-    ])
+    cmd.extend(
+        [
+            index,
+            "get_account_transactions",
+            f"(record {{ max_results = {count} : nat; start = null;"
+            f' account = record {{ owner = principal "{canister}"; subaccount = {sub_candid} }} }})',
+        ]
+    )
 
     try:
         r = _run_dfx_with_retries(cmd, timeout_s=30)
@@ -1862,7 +1934,11 @@ def _wallet_history(token: str, canister: str, network: str, count: int = 10,
         kind = tx.get("kind", "")
         ts_ns = int(tx.get("timestamp", "0"))
         ts_s = ts_ns // 1_000_000_000
-        dt = datetime.datetime.utcfromtimestamp(ts_s).strftime('%Y-%m-%d %H:%M') if ts_s else "?"
+        dt = (
+            datetime.datetime.utcfromtimestamp(ts_s).strftime("%Y-%m-%d %H:%M")
+            if ts_s
+            else "?"
+        )
 
         if kind == "transfer":
             transfers = tx.get("transfer", [])
@@ -1872,7 +1948,7 @@ def _wallet_history(token: str, canister: str, network: str, count: int = 10,
             from_p = t.get("from", {}).get("owner", "?")
             to_p = t.get("to", {}).get("owner", "?")
             amt = int(t.get("amount", "0").replace("_", ""))
-            human_amt = amt / (10 ** decimals)
+            human_amt = amt / (10**decimals)
 
             if from_p == canister and to_p == canister:
                 arrow = "↔"
@@ -1886,21 +1962,27 @@ def _wallet_history(token: str, canister: str, network: str, count: int = 10,
 
             if len(peer) > 20:
                 peer = peer[:10] + "…" + peer[-5:]
-            rows.append(f"  {dt}  #{tx_id}  {arrow} {human_amt:.{decimals}f} {symbol}  {peer}")
+            rows.append(
+                f"  {dt}  #{tx_id}  {arrow} {human_amt:.{decimals}f} {symbol}  {peer}"
+            )
 
         elif kind == "mint":
             mints = tx.get("mint", [])
             if mints:
                 amt = int(mints[0].get("amount", "0").replace("_", ""))
-                human_amt = amt / (10 ** decimals)
-                rows.append(f"  {dt}  #{tx_id}  ⊕ {human_amt:.{decimals}f} {symbol}  mint")
+                human_amt = amt / (10**decimals)
+                rows.append(
+                    f"  {dt}  #{tx_id}  ⊕ {human_amt:.{decimals}f} {symbol}  mint"
+                )
 
         elif kind == "burn":
             burns = tx.get("burn", [])
             if burns:
                 amt = int(burns[0].get("amount", "0").replace("_", ""))
-                human_amt = amt / (10 ** decimals)
-                rows.append(f"  {dt}  #{tx_id}  ⊖ {human_amt:.{decimals}f} {symbol}  burn")
+                human_amt = amt / (10**decimals)
+                rows.append(
+                    f"  {dt}  #{tx_id}  ⊖ {human_amt:.{decimals}f} {symbol}  burn"
+                )
 
     if not rows:
         return f"No {symbol} transactions found."
@@ -1939,7 +2021,10 @@ def _handle_wallet(args: str, canister: str, network: str) -> str:
 
     token = parts[0].lower()
     if token not in _LEDGER_IDS:
-        return f"Unknown token: {token}. Supported: {', '.join(_LEDGER_IDS.keys())}\n\n" + _WALLET_USAGE
+        return (
+            f"Unknown token: {token}. Supported: {', '.join(_LEDGER_IDS.keys())}\n\n"
+            + _WALLET_USAGE
+        )
 
     subcmd = parts[1] if len(parts) > 1 else "balance"
     rest = parts[2] if len(parts) > 2 else ""
@@ -1953,8 +2038,9 @@ def _handle_wallet(args: str, canister: str, network: str) -> str:
     if subcmd == "transfer":
         if not rest:
             return f"Usage: %wallet {token} transfer <amount> <principal>"
-        return _wallet_transfer(token, rest, canister, network,
-                                to_subaccount=sub, from_subaccount=from_sub)
+        return _wallet_transfer(
+            token, rest, canister, network, to_subaccount=sub, from_subaccount=from_sub
+        )
 
     if subcmd == "history":
         count = 10
@@ -1988,7 +2074,7 @@ _VETKEY_USAGE = (
     "\n"
     "Encrypt/decrypt targets:\n"
     "  /path/to/file.txt   — canister file (encrypted → .enc, decrypted → strip .enc)\n"
-    "  \"hello world\"       — literal text (quoted)\n"
+    '  "hello world"       — literal text (quoted)\n'
     "  <hex>               — hex ciphertext (for decrypt)\n"
     "\n"
     "Examples:\n"
@@ -1999,23 +2085,27 @@ _VETKEY_USAGE = (
 )
 
 
-def _vetkey_pubkey(canister: str, network: str, scope: str = None,
-                   key_name: str = "test_key_1",
-                   domain_separator: str = "basilisk") -> str:
+def _vetkey_pubkey(
+    canister: str,
+    network: str,
+    scope: str = None,
+    key_name: str = "test_key_1",
+    domain_separator: str = "basilisk",
+) -> str:
     """Query the vetKD public key for the caller's context."""
     esc_domain = domain_separator.replace("'", "\\'")
     scope_code = (
         f"        _scope = '{scope}'.encode('utf-8')\n"
-        if scope else
-        "        _scope = ic.caller().bytes\n"
+        if scope
+        else "        _scope = ic.caller().bytes\n"
     )
     pubkey_code = (
         "import json as _json\n"
         "def _vetkey_pubkey_cb():\n"
         "    try:\n"
         f"        _ds = b'{esc_domain}'\n"
-        + scope_code +
-        "        _ctx = bytes([len(_ds)]) + _ds + _scope\n"
+        + scope_code
+        + "        _ctx = bytes([len(_ds)]) + _ds + _scope\n"
         "        _ctx_hex = ''.join(f'{b:02x}' for b in _ctx)\n"
         f"        _args = ic.candid_encode('(record {{ canister_id = null; context = blob \"' + _ctx_hex + '\"; key_id = record {{ curve = variant {{ bls12_381_g2 = null }}; name = \"{key_name}\" }} }})')\n"
         "        _result = yield ic.call_raw('aaaaa-aa', 'vetkd_public_key', _args, 26_000_000_000)\n"
@@ -2046,7 +2136,7 @@ def _vetkey_pubkey(canister: str, network: str, scope: str = None,
     )
 
     result = canister_exec(pubkey_code, canister, network)
-    if result is None or 'VETKEY_INITIATED' not in (result or ''):
+    if result is None or "VETKEY_INITIATED" not in (result or ""):
         return f"[error] failed to initiate vetkey pubkey call: {result}"
 
     print(f"Requesting vetKD public key (key={key_name})...")
@@ -2055,10 +2145,15 @@ def _vetkey_pubkey(canister: str, network: str, scope: str = None,
     return _vetkey_poll(canister, network, label="Public key")
 
 
-def _vetkey_derive(transport_pk_hex: str, canister: str, network: str,
-                   scope: str = None, input_text: str = "",
-                   key_name: str = "test_key_1",
-                   domain_separator: str = "basilisk") -> str:
+def _vetkey_derive(
+    transport_pk_hex: str,
+    canister: str,
+    network: str,
+    scope: str = None,
+    input_text: str = "",
+    key_name: str = "test_key_1",
+    domain_separator: str = "basilisk",
+) -> str:
     """Derive an encrypted vetKey for the caller's context."""
     # Validate transport public key hex
     try:
@@ -2071,16 +2166,16 @@ def _vetkey_derive(transport_pk_hex: str, canister: str, network: str,
     esc_input = input_text.replace("'", "\\'")
     scope_code = (
         f"        _scope = '{scope}'.encode('utf-8')\n"
-        if scope else
-        "        _scope = ic.caller().bytes\n"
+        if scope
+        else "        _scope = ic.caller().bytes\n"
     )
     derive_code = (
         "import json as _json\n"
         "def _vetkey_derive_cb():\n"
         "    try:\n"
         f"        _ds = b'{esc_domain}'\n"
-        + scope_code +
-        "        _ctx = bytes([len(_ds)]) + _ds + _scope\n"
+        + scope_code
+        + "        _ctx = bytes([len(_ds)]) + _ds + _scope\n"
         "        _ctx_hex = ''.join(f'{b:02x}' for b in _ctx)\n"
         f"        _input_hex = ''.join(f'{{b:02x}}' for b in '{esc_input}'.encode('utf-8'))\n"
         f"        _tpk_hex = '{esc_tpk}'\n"
@@ -2114,7 +2209,7 @@ def _vetkey_derive(transport_pk_hex: str, canister: str, network: str,
     )
 
     result = canister_exec(derive_code, canister, network)
-    if result is None or 'VETKEY_INITIATED' not in (result or ''):
+    if result is None or "VETKEY_INITIATED" not in (result or ""):
         return f"[error] failed to initiate vetkey derive call: {result}"
 
     print(f"Deriving encrypted vetKey (key={key_name}, input='{input_text}')...")
@@ -2126,6 +2221,7 @@ def _vetkey_derive(transport_pk_hex: str, canister: str, network: str,
 def _vetkey_poll(canister: str, network: str, label: str = "Result") -> str:
     """Poll canister memfs for vetkey result (shared by pubkey and derive)."""
     import json
+
     poll_code = (
         "try:\n"
         "    with open('/tmp/_vetkey_result.txt', 'r') as _f:\n"
@@ -2136,12 +2232,12 @@ def _vetkey_poll(canister: str, network: str, label: str = "Result") -> str:
     for _ in range(15):
         _time.sleep(2)
         poll_result = canister_exec(poll_code, canister, network)
-        if poll_result and 'VETKEY_RESULT:' in poll_result:
-            json_str = poll_result.split('VETKEY_RESULT:', 1)[1].strip()
+        if poll_result and "VETKEY_RESULT:" in poll_result:
+            json_str = poll_result.split("VETKEY_RESULT:", 1)[1].strip()
             try:
                 data = json.loads(json_str)
-                if data.get('ok'):
-                    for key in ('public_key', 'encrypted_key', 'response'):
+                if data.get("ok"):
+                    for key in ("public_key", "encrypted_key", "response"):
                         if key in data:
                             return f"{label}: {data[key]}"
                     return f"{label}: {data}"
@@ -2156,6 +2252,7 @@ def _vetkey_poll(canister: str, network: str, label: str = "Result") -> str:
 def _vetkey_result(canister: str, network: str) -> str:
     """Check the result of the last vetkey operation."""
     import json
+
     poll_code = (
         "try:\n"
         "    with open('/tmp/_vetkey_result.txt', 'r') as _f:\n"
@@ -2164,12 +2261,12 @@ def _vetkey_result(canister: str, network: str) -> str:
         "    print('No pending vetkey result.')\n"
     )
     result = canister_exec(poll_code, canister, network)
-    if result and 'VETKEY_RESULT:' in result:
-        json_str = result.split('VETKEY_RESULT:', 1)[1].strip()
+    if result and "VETKEY_RESULT:" in result:
+        json_str = result.split("VETKEY_RESULT:", 1)[1].strip()
         try:
             data = json.loads(json_str)
-            if data.get('ok'):
-                for key in ('public_key', 'encrypted_key', 'response'):
+            if data.get("ok"):
+                for key in ("public_key", "encrypted_key", "response"):
                     if key in data:
                         return f"{key}: {data[key]}"
                 return str(data)
@@ -2188,21 +2285,22 @@ def _parse_vetkey_flags(args: str):
     cleaned = args
 
     import re as _re
+
     # --scope <text>
-    m = _re.search(r'--scope\s+(\S+)', cleaned)
+    m = _re.search(r"--scope\s+(\S+)", cleaned)
     if m:
         scope = m.group(1)
-        cleaned = cleaned[:m.start()] + cleaned[m.end():]
+        cleaned = cleaned[: m.start()] + cleaned[m.end() :]
     # --input <text>
-    m = _re.search(r'--input\s+(\S+)', cleaned)
+    m = _re.search(r"--input\s+(\S+)", cleaned)
     if m:
         input_text = m.group(1)
-        cleaned = cleaned[:m.start()] + cleaned[m.end():]
+        cleaned = cleaned[: m.start()] + cleaned[m.end() :]
     # --key <name>
-    m = _re.search(r'--key\s+(\S+)', cleaned)
+    m = _re.search(r"--key\s+(\S+)", cleaned)
     if m:
         key_name = m.group(1)
-        cleaned = cleaned[:m.start()] + cleaned[m.end():]
+        cleaned = cleaned[: m.start()] + cleaned[m.end() :]
 
     return cleaned.strip(), scope, input_text, key_name
 
@@ -2210,6 +2308,7 @@ def _parse_vetkey_flags(args: str):
 def _vetkey_poll_raw(canister: str, network: str, timeout: int = 30) -> dict:
     """Poll canister memfs for vetkey result and return the parsed dict (or None)."""
     import json
+
     poll_code = (
         "try:\n"
         "    with open('/tmp/_vetkey_result.txt', 'r') as _f:\n"
@@ -2221,37 +2320,38 @@ def _vetkey_poll_raw(canister: str, network: str, timeout: int = 30) -> dict:
     for _ in range(iterations):
         _time.sleep(2)
         poll_result = canister_exec(poll_code, canister, network)
-        if poll_result and 'VETKEY_RESULT:' in poll_result:
-            json_str = poll_result.split('VETKEY_RESULT:', 1)[1].strip()
+        if poll_result and "VETKEY_RESULT:" in poll_result:
+            json_str = poll_result.split("VETKEY_RESULT:", 1)[1].strip()
             try:
                 return json.loads(json_str)
             except json.JSONDecodeError:
-                return {'ok': True, 'raw': json_str}
+                return {"ok": True, "raw": json_str}
     return None
 
 
 def _parse_candid_blob(text: str):
     """Extract hex bytes from a Candid blob like: blob \"\\af\\d3\\fc...\" (fallback parser)."""
     import re as _re
+
     m = _re.search(r'blob\s*"([^"]*)"', text)
     if not m:
         return None
     raw = m.group(1)
-    hex_str = ''
+    hex_str = ""
     i = 0
     while i < len(raw):
-        if raw[i] == '\\' and i + 2 < len(raw):
-            hex_str += raw[i + 1:i + 3]
+        if raw[i] == "\\" and i + 2 < len(raw):
+            hex_str += raw[i + 1 : i + 3]
             i += 3
         else:
-            hex_str += format(ord(raw[i]), '02x')
+            hex_str += format(ord(raw[i]), "02x")
             i += 1
     return hex_str
 
 
 def _vetkey_extract_hex(data: dict, field: str):
     """Extract a clean hex string from a vetkey poll result dict."""
-    val = data.get(field, data.get('response', ''))
+    val = data.get(field, data.get("response", ""))
     if not val:
         return None
     # If it's already clean hex, return it
@@ -2265,23 +2365,24 @@ def _vetkey_extract_hex(data: dict, field: str):
     return parsed
 
 
-def _vetkey_get_pubkey_hex(canister: str, network: str, scope=None,
-                           key_name: str = "test_key_1") -> str:
+def _vetkey_get_pubkey_hex(
+    canister: str, network: str, scope=None, key_name: str = "test_key_1"
+) -> str:
     """Run the full pubkey flow and return the hex string (or error string)."""
     # Initiate the pubkey call (reuse existing function internals)
     esc_domain = "basilisk".replace("'", "\\'")
     scope_code = (
         f"        _scope = '{scope}'.encode('utf-8')\n"
-        if scope else
-        "        _scope = ic.caller().bytes\n"
+        if scope
+        else "        _scope = ic.caller().bytes\n"
     )
     pubkey_code = (
         "import json as _json\n"
         "def _vetkey_pubkey_cb():\n"
         "    try:\n"
         f"        _ds = b'{esc_domain}'\n"
-        + scope_code +
-        "        _ctx = bytes([len(_ds)]) + _ds + _scope\n"
+        + scope_code
+        + "        _ctx = bytes([len(_ds)]) + _ds + _scope\n"
         "        _ctx_hex = ''.join(f'{b:02x}' for b in _ctx)\n"
         f"        _args = ic.candid_encode('(record {{ canister_id = null; context = blob \"' + _ctx_hex + '\"; key_id = record {{ curve = variant {{ bls12_381_g2 = null }}; name = \"{key_name}\" }} }})')\n"
         "        _result = yield ic.call_raw('aaaaa-aa', 'vetkd_public_key', _args, 26_000_000_000)\n"
@@ -2311,7 +2412,7 @@ def _vetkey_get_pubkey_hex(canister: str, network: str, scope=None,
         "print('VETKEY_INITIATED')\n"
     )
     result = canister_exec(pubkey_code, canister, network)
-    if result is None or 'VETKEY_INITIATED' not in (result or ''):
+    if result is None or "VETKEY_INITIATED" not in (result or ""):
         return None
 
     print("  [1/3] Requesting vetKD public key...")
@@ -2320,30 +2421,35 @@ def _vetkey_get_pubkey_hex(canister: str, network: str, scope=None,
     data = _vetkey_poll_raw(canister, network, timeout=60)
     if data is None:
         return None
-    if not data.get('ok'):
+    if not data.get("ok"):
         return None
-    return _vetkey_extract_hex(data, 'public_key')
+    return _vetkey_extract_hex(data, "public_key")
 
 
-def _vetkey_get_encrypted_key_hex(tpk_hex: str, canister: str, network: str,
-                                   scope=None, input_text: str = "",
-                                   key_name: str = "test_key_1") -> str:
+def _vetkey_get_encrypted_key_hex(
+    tpk_hex: str,
+    canister: str,
+    network: str,
+    scope=None,
+    input_text: str = "",
+    key_name: str = "test_key_1",
+) -> str:
     """Run the full derive flow and return the encrypted key hex (or None)."""
     esc_domain = "basilisk".replace("'", "\\'")
     esc_tpk = tpk_hex.replace("'", "\\'")
     esc_input = input_text.replace("'", "\\'")
     scope_code = (
         f"        _scope = '{scope}'.encode('utf-8')\n"
-        if scope else
-        "        _scope = ic.caller().bytes\n"
+        if scope
+        else "        _scope = ic.caller().bytes\n"
     )
     derive_code = (
         "import json as _json\n"
         "def _vetkey_derive_cb():\n"
         "    try:\n"
         f"        _ds = b'{esc_domain}'\n"
-        + scope_code +
-        "        _ctx = bytes([len(_ds)]) + _ds + _scope\n"
+        + scope_code
+        + "        _ctx = bytes([len(_ds)]) + _ds + _scope\n"
         "        _ctx_hex = ''.join(f'{b:02x}' for b in _ctx)\n"
         f"        _input_hex = ''.join(f'{{b:02x}}' for b in '{esc_input}'.encode('utf-8'))\n"
         f"        _tpk_hex = '{esc_tpk}'\n"
@@ -2376,7 +2482,7 @@ def _vetkey_get_encrypted_key_hex(tpk_hex: str, canister: str, network: str,
         "print('VETKEY_INITIATED')\n"
     )
     result = canister_exec(derive_code, canister, network)
-    if result is None or 'VETKEY_INITIATED' not in (result or ''):
+    if result is None or "VETKEY_INITIATED" not in (result or ""):
         return None
 
     print("  [2/3] Deriving encrypted vetKey...")
@@ -2385,41 +2491,51 @@ def _vetkey_get_encrypted_key_hex(tpk_hex: str, canister: str, network: str,
     data = _vetkey_poll_raw(canister, network, timeout=60)
     if data is None:
         return None
-    if not data.get('ok'):
+    if not data.get("ok"):
         return None
-    return _vetkey_extract_hex(data, 'encrypted_key')
+    return _vetkey_extract_hex(data, "encrypted_key")
 
 
 def _vetkey_node_call(cmd_dict: dict) -> dict:
     """Call the vetkeys Node.js helper and return the parsed JSON response."""
     import json
-    helper_path = os.path.join(os.path.dirname(__file__), 'vetkeys_helper.js')
+
+    helper_path = os.path.join(os.path.dirname(__file__), "vetkeys_helper.js")
     if not os.path.exists(helper_path):
-        return {'ok': False, 'error': f'vetkeys_helper.js not found at {helper_path}'}
+        return {"ok": False, "error": f"vetkeys_helper.js not found at {helper_path}"}
 
     try:
         proc = subprocess.run(
-            ['node', helper_path],
+            ["node", helper_path],
             input=json.dumps(cmd_dict),
-            capture_output=True, text=True, timeout=30
+            capture_output=True,
+            text=True,
+            timeout=30,
         )
     except FileNotFoundError:
-        return {'ok': False, 'error': 'Node.js is required for vetkey encrypt/decrypt. Install it from https://nodejs.org'}
+        return {
+            "ok": False,
+            "error": "Node.js is required for vetkey encrypt/decrypt. Install it from https://nodejs.org",
+        }
     except subprocess.TimeoutExpired:
-        return {'ok': False, 'error': 'Node.js helper timed out'}
+        return {"ok": False, "error": "Node.js helper timed out"}
 
     if proc.returncode != 0:
-        return {'ok': False, 'error': f'Node.js helper failed: {proc.stderr.strip()}'}
+        return {"ok": False, "error": f"Node.js helper failed: {proc.stderr.strip()}"}
 
     try:
         return json.loads(proc.stdout)
     except json.JSONDecodeError:
-        return {'ok': False, 'error': f'Invalid response from helper: {proc.stdout[:200]}'}
+        return {
+            "ok": False,
+            "error": f"Invalid response from helper: {proc.stdout[:200]}",
+        }
 
 
 def _vetkey_read_canister_file(filepath: str, canister: str, network: str):
     """Read a file from the canister and return its bytes as hex, or None."""
     import base64 as _b64
+
     esc = filepath.replace("'", "\\'")
     code = (
         "import base64 as _b64\n"
@@ -2434,18 +2550,20 @@ def _vetkey_read_canister_file(filepath: str, canister: str, network: str):
     result = canister_exec(code, canister, network)
     if not result:
         return None
-    if 'FNOTFOUND' in result:
+    if "FNOTFOUND" in result:
         return None
-    if 'FDATA:' in result:
-        b64_str = result.split('FDATA:', 1)[1].strip()
+    if "FDATA:" in result:
+        b64_str = result.split("FDATA:", 1)[1].strip()
         return _b64.b64decode(b64_str).hex()
     return None
 
 
-def _vetkey_write_canister_file(filepath: str, data_hex: str,
-                                 canister: str, network: str) -> bool:
+def _vetkey_write_canister_file(
+    filepath: str, data_hex: str, canister: str, network: str
+) -> bool:
     """Write hex data to a file on the canister. Returns True on success."""
     import base64 as _b64
+
     data_bytes = bytes.fromhex(data_hex)
     b64_data = _b64.b64encode(data_bytes).decode()
     esc = filepath.replace("'", "\\'")
@@ -2460,11 +2578,16 @@ def _vetkey_write_canister_file(filepath: str, data_hex: str,
         "    print('FERR:' + str(_e))\n"
     )
     result = canister_exec(code, canister, network)
-    return result is not None and 'FWRITTEN' in result
+    return result is not None and "FWRITTEN" in result
 
 
-def _vetkey_derive_aes_key(canister: str, network: str, scope=None,
-                            input_text: str = "", key_name: str = "test_key_1"):
+def _vetkey_derive_aes_key(
+    canister: str,
+    network: str,
+    scope=None,
+    input_text: str = "",
+    key_name: str = "test_key_1",
+):
     """Full key derivation: pubkey + transport keygen + derive → returns (seed_hex, pubkey_hex, ek_hex) or error string."""
     # Step 1: Get public key
     pk_hex = _vetkey_get_pubkey_hex(canister, network, scope=scope, key_name=key_name)
@@ -2473,15 +2596,21 @@ def _vetkey_derive_aes_key(canister: str, network: str, scope=None,
 
     # Step 2: Generate transport key
     seed_hex = os.urandom(32).hex()
-    keygen_result = _vetkey_node_call({'cmd': 'keygen', 'seed_hex': seed_hex})
-    if not keygen_result.get('ok'):
-        return f"[error] Transport keygen failed: {keygen_result.get('error', 'unknown')}"
-    tpk_hex = keygen_result['tpk_hex']
+    keygen_result = _vetkey_node_call({"cmd": "keygen", "seed_hex": seed_hex})
+    if not keygen_result.get("ok"):
+        return (
+            f"[error] Transport keygen failed: {keygen_result.get('error', 'unknown')}"
+        )
+    tpk_hex = keygen_result["tpk_hex"]
 
     # Step 3: Derive encrypted key
     ek_hex = _vetkey_get_encrypted_key_hex(
-        tpk_hex, canister, network,
-        scope=scope, input_text=input_text, key_name=key_name
+        tpk_hex,
+        canister,
+        network,
+        scope=scope,
+        input_text=input_text,
+        key_name=key_name,
     )
     if ek_hex is None:
         return "[error] Failed to derive encrypted vetKey (timeout or error)"
@@ -2489,12 +2618,17 @@ def _vetkey_derive_aes_key(canister: str, network: str, scope=None,
     return (seed_hex, pk_hex, ek_hex)
 
 
-def _vetkey_encrypt(target: str, canister: str, network: str,
-                     scope=None, input_text: str = "",
-                     key_name: str = "test_key_1") -> str:
+def _vetkey_encrypt(
+    target: str,
+    canister: str,
+    network: str,
+    scope=None,
+    input_text: str = "",
+    key_name: str = "test_key_1",
+) -> str:
     """Encrypt a file or text using vetKeys."""
     # Determine if target is a file path or text
-    is_file = target.startswith('/')
+    is_file = target.startswith("/")
     is_quoted = target.startswith('"') and target.endswith('"')
 
     if is_file:
@@ -2511,14 +2645,15 @@ def _vetkey_encrypt(target: str, canister: str, network: str,
         if plaintext_hex is None:
             return f"[error] File not found on canister: {target}"
     elif is_quoted:
-        plaintext_hex = target[1:-1].encode('utf-8').hex()
+        plaintext_hex = target[1:-1].encode("utf-8").hex()
     else:
-        plaintext_hex = target.encode('utf-8').hex()
+        plaintext_hex = target.encode("utf-8").hex()
 
     # Derive AES key (2 async canister calls ~ 60-120s)
-    derivation_id_hex = input_text.encode('utf-8').hex() if input_text else ""
-    key_result = _vetkey_derive_aes_key(canister, network, scope=scope,
-                                         input_text=input_text, key_name=key_name)
+    derivation_id_hex = input_text.encode("utf-8").hex() if input_text else ""
+    key_result = _vetkey_derive_aes_key(
+        canister, network, scope=scope, input_text=input_text, key_name=key_name
+    )
     if isinstance(key_result, str):
         return key_result  # error message
 
@@ -2527,21 +2662,23 @@ def _vetkey_encrypt(target: str, canister: str, network: str,
     # Encrypt via Node.js helper
     print("  [3/3] Encrypting data...")
     sys.stdout.flush()
-    enc_result = _vetkey_node_call({
-        'cmd': 'encrypt',
-        'seed_hex': seed_hex,
-        'encrypted_key_hex': ek_hex,
-        'public_key_hex': pk_hex,
-        'derivation_id_hex': derivation_id_hex,
-        'plaintext_hex': plaintext_hex,
-    })
-    if not enc_result.get('ok'):
+    enc_result = _vetkey_node_call(
+        {
+            "cmd": "encrypt",
+            "seed_hex": seed_hex,
+            "encrypted_key_hex": ek_hex,
+            "public_key_hex": pk_hex,
+            "derivation_id_hex": derivation_id_hex,
+            "plaintext_hex": plaintext_hex,
+        }
+    )
+    if not enc_result.get("ok"):
         return f"[error] Encryption failed: {enc_result.get('error', 'unknown')}"
 
-    ciphertext_hex = enc_result['ciphertext_hex']
+    ciphertext_hex = enc_result["ciphertext_hex"]
 
     if is_file:
-        dest = target + '.enc'
+        dest = target + ".enc"
         ok = _vetkey_write_canister_file(dest, ciphertext_hex, canister, network)
         if ok:
             return f"Encrypted {target} → {dest} ({len(ciphertext_hex) // 2} bytes)"
@@ -2550,11 +2687,16 @@ def _vetkey_encrypt(target: str, canister: str, network: str,
         return f"Ciphertext ({len(ciphertext_hex) // 2} bytes):\n{ciphertext_hex}"
 
 
-def _vetkey_decrypt(target: str, canister: str, network: str,
-                     scope=None, input_text: str = "",
-                     key_name: str = "test_key_1") -> str:
+def _vetkey_decrypt(
+    target: str,
+    canister: str,
+    network: str,
+    scope=None,
+    input_text: str = "",
+    key_name: str = "test_key_1",
+) -> str:
     """Decrypt a file or hex ciphertext using vetKeys."""
-    is_file = target.startswith('/')
+    is_file = target.startswith("/")
     is_quoted = target.startswith('"') and target.endswith('"')
 
     if is_file:
@@ -2580,9 +2722,10 @@ def _vetkey_decrypt(target: str, canister: str, network: str,
         return f"[error] Invalid ciphertext (not valid hex)"
 
     # Derive AES key
-    derivation_id_hex = input_text.encode('utf-8').hex() if input_text else ""
-    key_result = _vetkey_derive_aes_key(canister, network, scope=scope,
-                                         input_text=input_text, key_name=key_name)
+    derivation_id_hex = input_text.encode("utf-8").hex() if input_text else ""
+    key_result = _vetkey_derive_aes_key(
+        canister, network, scope=scope, input_text=input_text, key_name=key_name
+    )
     if isinstance(key_result, str):
         return key_result
 
@@ -2591,27 +2734,29 @@ def _vetkey_decrypt(target: str, canister: str, network: str,
     # Decrypt via Node.js helper
     print("  [3/3] Decrypting data...")
     sys.stdout.flush()
-    dec_result = _vetkey_node_call({
-        'cmd': 'decrypt',
-        'seed_hex': seed_hex,
-        'encrypted_key_hex': ek_hex,
-        'public_key_hex': pk_hex,
-        'derivation_id_hex': derivation_id_hex,
-        'ciphertext_hex': ciphertext_hex,
-    })
-    if not dec_result.get('ok'):
+    dec_result = _vetkey_node_call(
+        {
+            "cmd": "decrypt",
+            "seed_hex": seed_hex,
+            "encrypted_key_hex": ek_hex,
+            "public_key_hex": pk_hex,
+            "derivation_id_hex": derivation_id_hex,
+            "ciphertext_hex": ciphertext_hex,
+        }
+    )
+    if not dec_result.get("ok"):
         return f"[error] Decryption failed: {dec_result.get('error', 'unknown')}"
 
-    plaintext_hex = dec_result['plaintext_hex']
+    plaintext_hex = dec_result["plaintext_hex"]
 
     if is_file:
-        dest = target[:-4] if target.endswith('.enc') else target + '.dec'
+        dest = target[:-4] if target.endswith(".enc") else target + ".dec"
         plaintext_bytes = bytes.fromhex(plaintext_hex)
         ok = _vetkey_write_canister_file(dest, plaintext_hex, canister, network)
         if ok:
             # Try to show the content if it looks like text
             try:
-                text = plaintext_bytes.decode('utf-8')
+                text = plaintext_bytes.decode("utf-8")
                 return f"Decrypted {target} → {dest} ({len(plaintext_bytes)} bytes)\nContent: {text[:500]}"
             except UnicodeDecodeError:
                 return f"Decrypted {target} → {dest} ({len(plaintext_bytes)} bytes)"
@@ -2619,7 +2764,7 @@ def _vetkey_decrypt(target: str, canister: str, network: str,
     else:
         plaintext_bytes = bytes.fromhex(plaintext_hex)
         try:
-            text = plaintext_bytes.decode('utf-8')
+            text = plaintext_bytes.decode("utf-8")
             return f"Plaintext: {text}"
         except UnicodeDecodeError:
             return f"Plaintext (hex): {plaintext_hex}"
@@ -2641,20 +2786,38 @@ def _handle_vetkey(args: str, canister: str, network: str) -> str:
     if subcmd == "derive":
         if not rest:
             return "Usage: %vetkey derive <transport_public_key_hex> [--scope <text>] [--input <text>]"
-        return _vetkey_derive(rest, canister, network, scope=scope,
-                              input_text=input_text, key_name=key_name)
+        return _vetkey_derive(
+            rest,
+            canister,
+            network,
+            scope=scope,
+            input_text=input_text,
+            key_name=key_name,
+        )
 
     if subcmd == "encrypt":
         if not rest:
             return "Usage: %vetkey encrypt <file_or_text> [--scope <text>] [--input <text>]"
-        return _vetkey_encrypt(rest, canister, network, scope=scope,
-                               input_text=input_text, key_name=key_name)
+        return _vetkey_encrypt(
+            rest,
+            canister,
+            network,
+            scope=scope,
+            input_text=input_text,
+            key_name=key_name,
+        )
 
     if subcmd == "decrypt":
         if not rest:
             return "Usage: %vetkey decrypt <file_or_text> [--scope <text>] [--input <text>]"
-        return _vetkey_decrypt(rest, canister, network, scope=scope,
-                               input_text=input_text, key_name=key_name)
+        return _vetkey_decrypt(
+            rest,
+            canister,
+            network,
+            scope=scope,
+            input_text=input_text,
+            key_name=key_name,
+        )
 
     if subcmd == "result":
         return _vetkey_result(canister, network)
@@ -2666,11 +2829,12 @@ def _task_log_follow_query(tid: str) -> str:
     """Canister code that returns JSON lines of recent executions for polling."""
     esc_tid = tid.replace("'", "\\'")
     return (
-        _TASK_RESOLVE + _TASK_UNAVAILABLE +
-        _FMT_NS +
-        "if 'Task' in dir():\n"
-        + _TASK_FIND.format(tid=esc_tid) +
-        "    if not _t:\n"
+        _TASK_RESOLVE
+        + _TASK_UNAVAILABLE
+        + _FMT_NS
+        + "if 'Task' in dir():\n"
+        + _TASK_FIND.format(tid=esc_tid)
+        + "    if not _t:\n"
         f"        print('__FOLLOW_ERR__Task not found: {esc_tid}')\n"
         "    else:\n"
         "        _execs = list(_t.executions)\n"
@@ -2700,14 +2864,14 @@ def _task_log_follow(tid: str, canister: str, network: str):
             task_status = None
             for line in raw.strip().split("\n"):
                 if line.startswith("__FOLLOW_ERR__"):
-                    print(line[len("__FOLLOW_ERR__"):])
+                    print(line[len("__FOLLOW_ERR__") :])
                     return
                 if line.startswith("__FOLLOW_TASK__"):
-                    task_status = line[len("__FOLLOW_TASK__"):]
+                    task_status = line[len("__FOLLOW_TASK__") :]
                     continue
                 if not line.startswith("__FOLLOW__"):
                     continue
-                parts = line[len("__FOLLOW__"):].split("|", 4)
+                parts = line[len("__FOLLOW__") :].split("|", 4)
                 if len(parts) < 5:
                     continue
                 eid, status, dt, name, result = parts
@@ -2785,10 +2949,10 @@ def _handle_task(args: str, canister: str, network: str) -> str:
         # Detect --follow / -f flag
         follow = False
         tid_rest = rest
-        for flag in ('--follow', '-f'):
+        for flag in ("--follow", "-f"):
             if flag in tid_rest:
                 follow = True
-                tid_rest = tid_rest.replace(flag, '').strip()
+                tid_rest = tid_rest.replace(flag, "").strip()
         if not tid_rest:
             return "Usage: %task log <id|name> [--follow|-f]"
         if follow:
@@ -2854,13 +3018,12 @@ _FX_RESOLVE = (
 def _fx_list_code() -> str:
     """Generate code to list all registered FX pairs with rates."""
     return (
-        _FX_RESOLVE +
-        "pairs = sorted(FXPair.instances(), key=lambda p: p.name)\n"
+        _FX_RESOLVE + "pairs = sorted(FXPair.instances(), key=lambda p: p.name)\n"
         "if not pairs:\n"
         "    print('No FX pairs registered.  Use: %fx register <base> <quote>')\n"
         "else:\n"
         "    print(f'FX Pairs ({len(pairs)}):')\n"
-        "    print(f'{\"Pair\":<12} {\"Rate\":>16} {\"Updated\":>22} {\"Error\"}')\n"
+        '    print(f\'{"Pair":<12} {"Rate":>16} {"Updated":>22} {"Error"}\')\n'
         "    print('-' * 70)\n"
         "    for p in pairs:\n"
         "        human = p.rate / (10 ** p.decimals) if p.rate and p.decimals else 0.0\n"
@@ -2882,8 +3045,7 @@ def _fx_register_code(base: str, quote: str, base_class: str, quote_class: str) 
     """Generate code to register an FX pair."""
     name = f"{base}/{quote}"
     return (
-        _FX_RESOLVE +
-        f"name = '{name}'\n"
+        _FX_RESOLVE + f"name = '{name}'\n"
         f"pair = FXPair[name]\n"
         f"if pair is None:\n"
         f"    pair = FXPair(name=name, base_symbol='{base}', base_class='{base_class}', "
@@ -2902,8 +3064,7 @@ def _fx_unregister_code(base: str, quote: str) -> str:
     """Generate code to unregister an FX pair."""
     name = f"{base}/{quote}"
     return (
-        _FX_RESOLVE +
-        f"pair = FXPair['{name}']\n"
+        _FX_RESOLVE + f"pair = FXPair['{name}']\n"
         f"if pair is None:\n"
         f"    print('FX pair not found: {name}')\n"
         f"else:\n"
@@ -2916,8 +3077,7 @@ def _fx_rate_code(base: str, quote: str) -> str:
     """Generate code to display the cached rate for a pair."""
     name = f"{base}/{quote}"
     return (
-        _FX_RESOLVE +
-        f"pair = FXPair['{name}']\n"
+        _FX_RESOLVE + f"pair = FXPair['{name}']\n"
         f"if pair is None:\n"
         f"    print('FX pair not registered: {name}')\n"
         f"elif pair.rate == 0:\n"
@@ -2932,8 +3092,7 @@ def _fx_info_code(base: str, quote: str) -> str:
     """Generate code to display full rate info for a pair."""
     name = f"{base}/{quote}"
     return (
-        _FX_RESOLVE +
-        f"pair = FXPair['{name}']\n"
+        _FX_RESOLVE + f"pair = FXPair['{name}']\n"
         f"if pair is None:\n"
         f"    print('FX pair not registered: {name}')\n"
         f"else:\n"
@@ -3095,6 +3254,7 @@ def _fx_refresh(canister: str, network: str) -> str:
 
     # Write refresh code to canister memfs
     import base64
+
     b64 = base64.b64encode(refresh_code.encode()).decode()
     write_code = (
         "import base64\n"
@@ -3104,27 +3264,31 @@ def _fx_refresh(canister: str, network: str) -> str:
         "print('FX_FILE_WRITTEN')\n"
     )
     result = canister_exec(write_code, canister, network)
-    if not result or 'FX_FILE_WRITTEN' not in result:
+    if not result or "FX_FILE_WRITTEN" not in result:
         return f"[error] failed to write refresh code: {result}"
 
     # Create task, add async step, start it
-    create_result = canister_exec(
-        _task_create_code("_fx_refresh"), canister, network
-    )
+    create_result = canister_exec(_task_create_code("_fx_refresh"), canister, network)
     if not create_result:
         return "[error] failed to create refresh task"
 
     import re
-    m = re.search(r'task\s+(\d+)', create_result, re.IGNORECASE)
+
+    m = re.search(r"task\s+(\d+)", create_result, re.IGNORECASE)
     if not m:
         return f"[error] failed to parse task ID: {create_result}"
     tid = m.group(1)
 
     step_result = canister_exec(
         _task_add_step_code(f"{tid} --async --file /_fx_refresh.py"),
-        canister, network,
+        canister,
+        network,
     )
-    if not step_result or "Added" not in step_result and "step" not in step_result.lower():
+    if (
+        not step_result
+        or "Added" not in step_result
+        and "step" not in step_result.lower()
+    ):
         _cleanup_fx_task(tid, canister, network)
         return f"[error] failed to add step: {step_result}"
 
@@ -3141,7 +3305,8 @@ def _fx_refresh(canister: str, network: str) -> str:
             _cleanup_fx_task(tid, canister, network)
             canister_exec(
                 "import os; os.remove('/_fx_refresh.py') if os.path.exists('/_fx_refresh.py') else None",
-                canister, network,
+                canister,
+                network,
             )
             # Parse and display results
             if "FX_REFRESH_DONE:" in log:
@@ -3226,7 +3391,8 @@ def _handle_fx(args: str, canister: str, network: str) -> str:
             quote_class = "Cryptocurrency"
         return canister_exec(
             _fx_register_code(base, quote, base_class, quote_class),
-            canister, network,
+            canister,
+            network,
         )
 
     if subcmd == "unregister":
@@ -3235,7 +3401,9 @@ def _handle_fx(args: str, canister: str, network: str) -> str:
         base = parts[1].upper()
         quote = parts[2].upper()
         return canister_exec(
-            _fx_unregister_code(base, quote), canister, network,
+            _fx_unregister_code(base, quote),
+            canister,
+            network,
         )
 
     if subcmd == "rate":
@@ -3244,7 +3412,9 @@ def _handle_fx(args: str, canister: str, network: str) -> str:
         base = parts[1].upper()
         quote = parts[2].upper()
         return canister_exec(
-            _fx_rate_code(base, quote), canister, network,
+            _fx_rate_code(base, quote),
+            canister,
+            network,
         )
 
     if subcmd == "info":
@@ -3253,7 +3423,9 @@ def _handle_fx(args: str, canister: str, network: str) -> str:
         base = parts[1].upper()
         quote = parts[2].upper()
         return canister_exec(
-            _fx_info_code(base, quote), canister, network,
+            _fx_info_code(base, quote),
+            canister,
+            network,
         )
 
     if subcmd == "refresh":
@@ -3424,13 +3596,17 @@ def _handle_group(args: str, canister: str, network: str) -> str:
         add_parts = args.strip().split()
         if len(add_parts) < 3:
             return "Usage: %group add <name> <principal>"
-        return canister_exec(_group_add_code(add_parts[1], add_parts[2]), canister, network)
+        return canister_exec(
+            _group_add_code(add_parts[1], add_parts[2]), canister, network
+        )
 
     if subcmd == "remove":
         rm_parts = args.strip().split()
         if len(rm_parts) < 3:
             return "Usage: %group remove <name> <principal>"
-        return canister_exec(_group_remove_code(rm_parts[1], rm_parts[2]), canister, network)
+        return canister_exec(
+            _group_remove_code(rm_parts[1], rm_parts[2]), canister, network
+        )
 
     return f"Unknown group command: {subcmd}\n\n" + _GROUP_USAGE
 
@@ -3495,7 +3671,7 @@ def _crypto_scopes_code() -> str:
         "if not _scopes:\n"
         "    print('No encryption scopes defined.')\n"
         "else:\n"
-        "    print(f'  {\"Scope\":<40} {\"Principals\":>10}  Access')\n"
+        '    print(f\'  {"Scope":<40} {"Principals":>10}  Access\')\n'
         "    print('  ' + '-' * 65)\n"
         "    for _s in sorted(_scopes):\n"
         "        _info = _scopes[_s]\n"
@@ -3768,7 +3944,9 @@ def _handle_crypto(args: str, canister: str, network: str) -> str:
             idx = parts.index("--scope")
             if idx + 1 < len(parts):
                 scope = parts[idx + 1]
-        return canister_exec(_crypto_encrypt_file_code(filepath, scope), canister, network)
+        return canister_exec(
+            _crypto_encrypt_file_code(filepath, scope), canister, network
+        )
 
     if subcmd == "decrypt":
         if len(parts) < 2:
@@ -3804,12 +3982,20 @@ def _handle_crypto(args: str, canister: str, network: str) -> str:
         if "--with-group" in parts:
             idx = parts.index("--with-group")
             if idx + 1 < len(parts):
-                return canister_exec(_crypto_share_group_code(scope, parts[idx + 1]), canister, network)
+                return canister_exec(
+                    _crypto_share_group_code(scope, parts[idx + 1]), canister, network
+                )
         if "--with" in parts:
             idx = parts.index("--with")
             if idx + 1 < len(parts):
-                return canister_exec(_crypto_share_principal_code(scope, parts[idx + 1]), canister, network)
-        return "Usage: %crypto share <scope> --with <principal>  or  --with-group <group>"
+                return canister_exec(
+                    _crypto_share_principal_code(scope, parts[idx + 1]),
+                    canister,
+                    network,
+                )
+        return (
+            "Usage: %crypto share <scope> --with <principal>  or  --with-group <group>"
+        )
 
     if subcmd == "revoke":
         if len(parts) < 4:
@@ -3818,12 +4004,20 @@ def _handle_crypto(args: str, canister: str, network: str) -> str:
         if "--from-group" in parts:
             idx = parts.index("--from-group")
             if idx + 1 < len(parts):
-                return canister_exec(_crypto_revoke_group_code(scope, parts[idx + 1]), canister, network)
+                return canister_exec(
+                    _crypto_revoke_group_code(scope, parts[idx + 1]), canister, network
+                )
         if "--from" in parts:
             idx = parts.index("--from")
             if idx + 1 < len(parts):
-                return canister_exec(_crypto_revoke_principal_code(scope, parts[idx + 1]), canister, network)
-        return "Usage: %crypto revoke <scope> --from <principal>  or  --from-group <group>"
+                return canister_exec(
+                    _crypto_revoke_principal_code(scope, parts[idx + 1]),
+                    canister,
+                    network,
+                )
+        return (
+            "Usage: %crypto revoke <scope> --from <principal>  or  --from-group <group>"
+        )
 
     return f"Unknown crypto command: {subcmd}\n\n" + _CRYPTO_USAGE
 
@@ -3870,6 +4064,7 @@ def _handle_magic(line: str, canister: str, network: str) -> str:
             return f"[error] {result[7:]}"
         try:
             import base64
+
             data = base64.b64decode(result)
             os.makedirs(os.path.dirname(local) or ".", exist_ok=True)
             with open(local, "wb") as f:
@@ -3891,6 +4086,7 @@ def _handle_magic(line: str, canister: str, network: str) -> str:
         except FileNotFoundError:
             return f"[error] local file not found: {local}"
         import base64
+
         b64 = base64.b64encode(data).decode()
         esc = remote.replace("'", "\\'")
         ul_code = (
@@ -3985,6 +4181,7 @@ def _handle_magic(line: str, canister: str, network: str) -> str:
 # Shell modes
 # ---------------------------------------------------------------------------
 
+
 def _is_interactive():
     """Check if stdin is a terminal (not a pipe/redirect)."""
     return sys.stdin.isatty()
@@ -4009,7 +4206,9 @@ def _welcome_banner(canister: str, network: str):
     try:
         result = canister_exec("print(str(ic.caller()))", canister, network)
         if result:
-            lines = [l for l in result.strip().split('\n') if l and not l.startswith('2026-')]
+            lines = [
+                l for l in result.strip().split("\n") if l and not l.startswith("2026-")
+            ]
             if lines:
                 principal = lines[-1].strip()
                 if len(principal) > 20:
@@ -4298,6 +4497,7 @@ def run_watch(canister: str, network: str, inbox: str, outbox: str):
     while True:
         try:
             import time
+
             time.sleep(0.3)
             current_mtime = os.path.getmtime(inbox)
             if current_mtime <= last_mtime:
@@ -4316,14 +4516,20 @@ def run_watch(canister: str, network: str, inbox: str, outbox: str):
             # Handle magic/local commands
             stripped = code.strip()
             if stripped.startswith("!"):
-                import io, contextlib
+                import contextlib
+                import io
+
                 buf = io.StringIO()
                 with contextlib.redirect_stdout(buf):
                     os.system(stripped[1:])
                 result = buf.getvalue()
             else:
                 magic_result = _handle_magic(stripped, canister, network)
-                result = magic_result if magic_result is not None else canister_exec(code, canister, network)
+                result = (
+                    magic_result
+                    if magic_result is not None
+                    else canister_exec(code, canister, network)
+                )
 
             with open(outbox, "w") as f:
                 if result and result.strip():
@@ -4341,6 +4547,7 @@ def run_watch(canister: str, network: str, inbox: str, outbox: str):
 # Entry point
 # ---------------------------------------------------------------------------
 
+
 def main():
     parser = argparse.ArgumentParser(
         prog="basilisk-shell",
@@ -4349,12 +4556,22 @@ def main():
     parser.add_argument("--canister", required=True, help="Canister name or ID")
     parser.add_argument("--network", default=None, help="Network: local, ic, or URL")
     parser.add_argument("-c", dest="code", default=None, help="Execute code string")
-    parser.add_argument("--watch", default=None, metavar="INBOX",
-                        help="Watch mode: read commands from INBOX file")
-    parser.add_argument("--outbox", default="/tmp/basilisk_shell_out",
-                        help="Output file for watch mode (default: /tmp/basilisk_shell_out)")
-    parser.add_argument("--login", action="store_true",
-                        help="Force interactive mode (used by basilisk sshd)")
+    parser.add_argument(
+        "--watch",
+        default=None,
+        metavar="INBOX",
+        help="Watch mode: read commands from INBOX file",
+    )
+    parser.add_argument(
+        "--outbox",
+        default="/tmp/basilisk_shell_out",
+        help="Output file for watch mode (default: /tmp/basilisk_shell_out)",
+    )
+    parser.add_argument(
+        "--login",
+        action="store_true",
+        help="Force interactive mode (used by basilisk sshd)",
+    )
     parser.add_argument("file", nargs="?", default=None, help="Script file to execute")
 
     args = parser.parse_args()

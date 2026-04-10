@@ -16,21 +16,21 @@ import pytest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from ic_basilisk_toolkit.shell import (
-    _handle_magic,
-    _handle_task,
     _TASK_RESOLVE,
     _TASK_USAGE,
+    _handle_magic,
+    _handle_task,
 )
 from tests.conftest import exec_on_canister, magic_on_canister
-
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _extract_task_id(output: str) -> str:
     """Extract a numeric task ID from command output like 'Created task 42: ...'"""
-    m = re.search(r'task\s+(\d+)', output, re.IGNORECASE)
+    m = re.search(r"task\s+(\d+)", output, re.IGNORECASE)
     return m.group(1) if m else None
 
 
@@ -48,6 +48,7 @@ def _cleanup_task(tid: str, canister: str, network: str):
 # ===========================================================================
 # %task (no args) and %task list — listing
 # ===========================================================================
+
 
 class TestTaskList:
     """Test %task / %task list / %ps listing."""
@@ -84,7 +85,9 @@ class TestTaskList:
 
     def test_list_shows_created_task(self, canister_reachable, canister, network):
         """A created task should appear in %task list."""
-        create_result = _task_magic("%task create _test_list_visible", canister, network)
+        create_result = _task_magic(
+            "%task create _test_list_visible", canister, network
+        )
         tid = _extract_task_id(create_result)
         assert tid, f"Failed to create task: {create_result}"
         try:
@@ -130,6 +133,7 @@ class TestTaskList:
 # ===========================================================================
 # %task create
 # ===========================================================================
+
 
 class TestTaskCreate:
     """Test %task create."""
@@ -198,6 +202,7 @@ class TestTaskCreate:
 # %task info
 # ===========================================================================
 
+
 class TestTaskInfo:
     """Test %task info."""
 
@@ -250,14 +255,13 @@ class TestTaskInfo:
 # %task log
 # ===========================================================================
 
+
 class TestTaskLog:
     """Test %task log."""
 
     def test_log_empty(self, canister_reachable, canister, network):
         """Log of a new task should show 'no executions'."""
-        create_result = _task_magic(
-            "%task create _test_log_empty", canister, network
-        )
+        create_result = _task_magic("%task create _test_log_empty", canister, network)
         tid = _extract_task_id(create_result)
         assert tid
         try:
@@ -269,19 +273,17 @@ class TestTaskLog:
 
     def test_log_with_execution(self, canister_reachable, canister, network):
         """Log should show execution records if any exist."""
-        create_result = _task_magic(
-            "%task create _test_log_exec", canister, network
-        )
+        create_result = _task_magic("%task create _test_log_exec", canister, network)
         tid = _extract_task_id(create_result)
         assert tid
         try:
             # Manually create an execution record
             exec_on_canister(
-                _TASK_RESOLVE +
-                f"_t = Task.load('{tid}')\n"
+                _TASK_RESOLVE + f"_t = Task.load('{tid}')\n"
                 "_e = TaskExecution(name='exec-1', task=_t, status='completed', result='ok')\n"
                 "print('created')",
-                canister, network,
+                canister,
+                network,
             )
             result = _task_magic(f"%task log {tid}", canister, network)
             assert "1 execution" in result
@@ -304,14 +306,13 @@ class TestTaskLog:
 # %task start / %task stop — lifecycle
 # ===========================================================================
 
+
 class TestTaskLifecycle:
     """Test starting and stopping tasks (self-contained)."""
 
     def test_stop_sets_cancelled(self, canister_reachable, canister, network):
         """Stopping a task should set status to cancelled."""
-        create_result = _task_magic(
-            "%task create _test_stop_cancel", canister, network
-        )
+        create_result = _task_magic("%task create _test_stop_cancel", canister, network)
         tid = _extract_task_id(create_result)
         assert tid
         try:
@@ -432,6 +433,7 @@ class TestTaskLifecycle:
 # %task delete
 # ===========================================================================
 
+
 class TestTaskDelete:
     """Test %task delete."""
 
@@ -492,6 +494,7 @@ class TestTaskDelete:
 # Shortcut aliases — backwards compatibility
 # ===========================================================================
 
+
 class TestShortcutAliases:
     """Test that %ps, %start, %kill still work as shortcuts."""
 
@@ -502,9 +505,7 @@ class TestShortcutAliases:
 
     def test_start_alias(self, canister_reachable, canister, network):
         """%start <id> should behave like %task start <id>."""
-        create_result = _task_magic(
-            "%task create _test_start_alias", canister, network
-        )
+        create_result = _task_magic("%task create _test_start_alias", canister, network)
         tid = _extract_task_id(create_result)
         assert tid
         try:
@@ -516,9 +517,7 @@ class TestShortcutAliases:
 
     def test_kill_alias(self, canister_reachable, canister, network):
         """%kill <id> should behave like %task stop <id>."""
-        create_result = _task_magic(
-            "%task create _test_kill_alias", canister, network
-        )
+        create_result = _task_magic("%task create _test_kill_alias", canister, network)
         tid = _extract_task_id(create_result)
         assert tid
         try:
@@ -542,15 +541,20 @@ class TestShortcutAliases:
 # %task usage / unknown subcommand
 # ===========================================================================
 
+
 class TestTaskUsage:
     """Test usage messages and error handling."""
 
-    def test_unknown_subcommand_shows_usage(self, canister_reachable, canister, network):
+    def test_unknown_subcommand_shows_usage(
+        self, canister_reachable, canister, network
+    ):
         """Unknown subcommand should show usage."""
         result = _task_magic("%task foobar", canister, network)
         assert "Usage" in result
 
-    def test_task_help_contains_all_subcommands(self, canister_reachable, canister, network):
+    def test_task_help_contains_all_subcommands(
+        self, canister_reachable, canister, network
+    ):
         """Usage message should list all subcommands."""
         result = _task_magic("%task foobar", canister, network)
         for cmd in ("list", "create", "info", "log", "start", "stop", "delete"):
@@ -561,6 +565,7 @@ class TestTaskUsage:
 # Entity operations via direct exec
 # ===========================================================================
 
+
 class TestTaskEntities:
     """Test task entity operations via direct canister exec."""
 
@@ -568,7 +573,8 @@ class TestTaskEntities:
         """Task.count() should return a number."""
         result = exec_on_canister(
             _TASK_RESOLVE + "print(Task.count())",
-            canister, network,
+            canister,
+            network,
         )
         count = int(result)
         assert count >= 0
@@ -576,27 +582,25 @@ class TestTaskEntities:
     def test_task_instances_iterable(self, canister_reachable, canister, network):
         """Task.instances() should return iterable tasks."""
         result = exec_on_canister(
-            _TASK_RESOLVE +
-            "for t in Task.instances(): print(f'{t._id}: {t.name}')\n"
+            _TASK_RESOLVE + "for t in Task.instances(): print(f'{t._id}: {t.name}')\n"
             "if Task.count() == 0: print('none')",
-            canister, network,
+            canister,
+            network,
         )
         assert result
 
     def test_task_load_and_fields(self, canister_reachable, canister, network):
         """Task.load() should return a task with expected fields."""
         # Create via magic, load via exec
-        create_result = _task_magic(
-            "%task create _test_entity_load", canister, network
-        )
+        create_result = _task_magic("%task create _test_entity_load", canister, network)
         tid = _extract_task_id(create_result)
         assert tid
         try:
             result = exec_on_canister(
-                _TASK_RESOLVE +
-                f"t = Task.load('{tid}')\n"
+                _TASK_RESOLVE + f"t = Task.load('{tid}')\n"
                 "print(f'{t.name}|{t.status}')",
-                canister, network,
+                canister,
+                network,
             )
             assert "_test_entity_load" in result
             assert "pending" in result
@@ -612,12 +616,12 @@ class TestTaskEntities:
         assert tid
         try:
             result = exec_on_canister(
-                _TASK_RESOLVE +
-                f"t = Task.load('{tid}')\n"
+                _TASK_RESOLVE + f"t = Task.load('{tid}')\n"
                 "scheds = list(t.schedules)\n"
                 "print(f'{len(scheds)} schedules')\n"
                 "if scheds: print(f'repeat={scheds[0].repeat_every}')",
-                canister, network,
+                canister,
+                network,
             )
             assert "1 schedules" in result
             assert "repeat=90" in result
@@ -633,10 +637,10 @@ class TestTaskEntities:
         assert tid
         try:
             result = exec_on_canister(
-                _TASK_RESOLVE +
-                f"t = Task.load('{tid}')\n"
+                _TASK_RESOLVE + f"t = Task.load('{tid}')\n"
                 "print(f'{len(list(t.steps))} steps')",
-                canister, network,
+                canister,
+                network,
             )
             assert "0 steps" in result
         finally:
@@ -651,10 +655,10 @@ class TestTaskEntities:
         assert tid
         try:
             result = exec_on_canister(
-                _TASK_RESOLVE +
-                f"t = Task.load('{tid}')\n"
+                _TASK_RESOLVE + f"t = Task.load('{tid}')\n"
                 "print(f'{len(list(t.executions))} executions')",
-                canister, network,
+                canister,
+                network,
             )
             assert "0 executions" in result
         finally:
@@ -664,6 +668,7 @@ class TestTaskEntities:
 # ===========================================================================
 # End-to-end task execution tests
 # ===========================================================================
+
 
 class TestTaskExecution:
     """End-to-end tests: create task with code, run, verify execution.
@@ -695,7 +700,8 @@ class TestTaskExecution:
         """Creating with --code and every Ns should set up code + schedule."""
         result = _task_magic(
             '%task create _test_e2e_code_sched every 60s --code "print(1+1)"',
-            canister, network,
+            canister,
+            network,
         )
         tid = _extract_task_id(result)
         assert tid, f"Failed to create task: {result}"
@@ -713,7 +719,8 @@ class TestTaskExecution:
         """Run a one-shot task with code; verify execution result in log."""
         result = _task_magic(
             '%task create _test_e2e_oneshot --code "print(42)"',
-            canister, network,
+            canister,
+            network,
         )
         tid = _extract_task_id(result)
         assert tid, f"Failed to create task: {result}"
@@ -736,7 +743,8 @@ class TestTaskExecution:
         """Task execution should capture stdout in TaskExecution.result."""
         result = _task_magic(
             '%task create _test_e2e_output --code "for i in range(3): print(i)"',
-            canister, network,
+            canister,
+            network,
         )
         tid = _extract_task_id(result)
         assert tid, f"Failed to create task: {result}"
@@ -754,7 +762,8 @@ class TestTaskExecution:
         """Task with failing code should record 'failed' status and traceback."""
         result = _task_magic(
             '%task create _test_e2e_fail --code "raise ValueError(123)"',
-            canister, network,
+            canister,
+            network,
         )
         tid = _extract_task_id(result)
         assert tid, f"Failed to create task: {result}"
@@ -776,7 +785,8 @@ class TestTaskExecution:
         """Running a task multiple times should accumulate executions."""
         result = _task_magic(
             '%task create _test_e2e_multi --code "print(42)"',
-            canister, network,
+            canister,
+            network,
         )
         tid = _extract_task_id(result)
         assert tid, f"Failed to create task: {result}"
@@ -793,9 +803,7 @@ class TestTaskExecution:
 
     def test_run_without_code(self, canister_reachable, canister, network):
         """Running a task without code should report 'no executable code'."""
-        result = _task_magic(
-            "%task create _test_e2e_nocode_run", canister, network
-        )
+        result = _task_magic("%task create _test_e2e_nocode_run", canister, network)
         tid = _extract_task_id(result)
         assert tid, f"Failed to create task: {result}"
         try:
@@ -830,7 +838,8 @@ class TestTaskExecution:
         """Task info should show a code snippet for steps with code."""
         result = _task_magic(
             '%task create _test_e2e_snippet --code "x = 42; print(x)"',
-            canister, network,
+            canister,
+            network,
         )
         tid = _extract_task_id(result)
         assert tid, f"Failed to create task: {result}"
@@ -842,9 +851,7 @@ class TestTaskExecution:
 
     def test_start_without_code_no_timer(self, canister_reachable, canister, network):
         """Starting a task without code should NOT schedule a timer."""
-        result = _task_magic(
-            "%task create _test_e2e_no_code", canister, network
-        )
+        result = _task_magic("%task create _test_e2e_no_code", canister, network)
         tid = _extract_task_id(result)
         assert tid, f"Failed to create task: {result}"
         try:
@@ -854,7 +861,9 @@ class TestTaskExecution:
         finally:
             _cleanup_task(tid, canister, network)
 
-    def test_start_with_code_schedules_timer(self, canister_reachable, canister, network):
+    def test_start_with_code_schedules_timer(
+        self, canister_reachable, canister, network
+    ):
         """Starting a task with code should schedule a timer."""
         result = _task_magic(
             '%task create _test_e2e_timer --code "print(1)"', canister, network
@@ -871,6 +880,7 @@ class TestTaskExecution:
 # ===========================================================================
 # Timer-based task execution (%task start)
 # ===========================================================================
+
 
 def _wait_for_task_execution(tid, canister, network, timeout=30, poll=3):
     """Poll %task info until execution count > 0 or timeout."""
@@ -914,8 +924,9 @@ class TestTaskTimerExecution:
     def test_start_sync_failure_recorded(self, canister_reachable, canister, network):
         """A failing sync timer task should record 'failed' status and traceback."""
         result = _task_magic(
-            '%task create _test_timer_fail --code "raise RuntimeError(\'boom\')"',
-            canister, network,
+            "%task create _test_timer_fail --code \"raise RuntimeError('boom')\"",
+            canister,
+            network,
         )
         tid = _extract_task_id(result)
         assert tid, f"Failed to create task: {result}"
@@ -932,17 +943,16 @@ class TestTaskTimerExecution:
 
     def test_start_async_error_recorded(self, canister_reachable, canister, network):
         """An async step that raises an error should record failure, not silently trap."""
-        result = _task_magic(
-            "%task create _test_timer_async_err", canister, network
-        )
+        result = _task_magic("%task create _test_timer_async_err", canister, network)
         tid = _extract_task_id(result)
         assert tid, f"Failed to create task: {result}"
         try:
             # Add an async step with code that will fail (NameError)
             _task_magic(
-                f'%task add-step {tid} --async --code '
-                '"def async_task(): raise ValueError(\'async_boom\'); yield None"',
-                canister, network,
+                f"%task add-step {tid} --async --code "
+                "\"def async_task(): raise ValueError('async_boom'); yield None\"",
+                canister,
+                network,
             )
             _task_magic(f"%task start {tid}", canister, network)
             info = _wait_for_task_execution(tid, canister, network)
@@ -954,18 +964,19 @@ class TestTaskTimerExecution:
         finally:
             _cleanup_task(tid, canister, network)
 
-    def test_start_async_logger_in_task_log(self, canister_reachable, canister, network):
+    def test_start_async_logger_in_task_log(
+        self, canister_reachable, canister, network
+    ):
         """Async step using logger.info() should show messages in %task log output."""
-        result = _task_magic(
-            "%task create _test_timer_async_log", canister, network
-        )
+        result = _task_magic("%task create _test_timer_async_log", canister, network)
         tid = _extract_task_id(result)
         assert tid, f"Failed to create task: {result}"
         try:
             _task_magic(
-                f'%task add-step {tid} --async --code '
-                '"def async_task(): logger.info(\'LOGCHECK_HELLO\'); logger.info(\'LOGCHECK_WORLD\'); yield; return \'done\'"',
-                canister, network,
+                f"%task add-step {tid} --async --code "
+                "\"def async_task(): logger.info('LOGCHECK_HELLO'); logger.info('LOGCHECK_WORLD'); yield; return 'done'\"",
+                canister,
+                network,
             )
             _task_magic(f"%task start {tid}", canister, network)
             info = _wait_for_task_execution(tid, canister, network)
@@ -973,20 +984,18 @@ class TestTaskTimerExecution:
 
             log = _task_magic(f"%task log {tid}", canister, network)
             assert "completed" in log, f"Expected completed: {log}"
-            assert "LOGCHECK_HELLO" in log, (
-                f"Expected logger.info() output in task log: {log}"
-            )
-            assert "LOGCHECK_WORLD" in log, (
-                f"Expected second logger.info() output in task log: {log}"
-            )
+            assert (
+                "LOGCHECK_HELLO" in log
+            ), f"Expected logger.info() output in task log: {log}"
+            assert (
+                "LOGCHECK_WORLD" in log
+            ), f"Expected second logger.info() output in task log: {log}"
         finally:
             _cleanup_task(tid, canister, network)
 
     def test_start_async_http_download(self, canister_reachable, canister, network):
         """An async step making an HTTP outcall should execute and record the result."""
-        result = _task_magic(
-            "%task create _test_timer_http", canister, network
-        )
+        result = _task_magic("%task create _test_timer_http", canister, network)
         tid = _extract_task_id(result)
         assert tid, f"Failed to create task: {result}"
         try:
@@ -997,7 +1006,8 @@ class TestTaskTimerExecution:
             )
             _task_magic(
                 f'%task add-step {tid} --async --code "{download_code}"',
-                canister, network,
+                canister,
+                network,
             )
             _task_magic(f"%task start {tid}", canister, network)
             # HTTP outcalls can take a while (consensus + external call)
@@ -1013,15 +1023,14 @@ class TestTaskTimerExecution:
             # Clean up downloaded file
             exec_on_canister(
                 "import os; os.remove('/test_http_download.py') if os.path.exists('/test_http_download.py') else None",
-                canister, network,
+                canister,
+                network,
             )
             _cleanup_task(tid, canister, network)
 
     def test_multistep_async_then_sync(self, canister_reachable, canister, network):
         """Multi-step task: async HTTP download, then sync exec of downloaded file."""
-        result = _task_magic(
-            "%task create _test_timer_multistep", canister, network
-        )
+        result = _task_magic("%task create _test_timer_multistep", canister, network)
         tid = _extract_task_id(result)
         assert tid, f"Failed to create task: {result}"
         try:
@@ -1032,12 +1041,14 @@ class TestTaskTimerExecution:
             )
             _task_magic(
                 f'%task add-step {tid} --async --code "{download_code}"',
-                canister, network,
+                canister,
+                network,
             )
             # Step 1: sync exec of downloaded file via run() helper
             _task_magic(
-                f'%task add-step {tid} --code "run(\'/test_multistep.py\')"',
-                canister, network,
+                f"%task add-step {tid} --code \"run('/test_multistep.py')\"",
+                canister,
+                network,
             )
 
             info_before = _task_magic(f"%task info {tid}", canister, network)
@@ -1054,15 +1065,14 @@ class TestTaskTimerExecution:
         finally:
             exec_on_canister(
                 "import os; os.remove('/test_multistep.py') if os.path.exists('/test_multistep.py') else None",
-                canister, network,
+                canister,
+                network,
             )
             _cleanup_task(tid, canister, network)
 
     def test_wget_and_run_helpers(self, canister_reachable, canister, network):
         """wget() + run() helpers: download a script then execute it."""
-        result = _task_magic(
-            "%task create _test_wget_run", canister, network
-        )
+        result = _task_magic("%task create _test_wget_run", canister, network)
         tid = _extract_task_id(result)
         assert tid, f"Failed to create task: {result}"
         try:
@@ -1074,7 +1084,8 @@ class TestTaskTimerExecution:
             )
             _task_magic(
                 f'%task add-step {tid} --async --code "{step_code}"',
-                canister, network,
+                canister,
+                network,
             )
             _task_magic(f"%task start {tid}", canister, network)
             info = _wait_for_task_execution(tid, canister, network, timeout=60)
@@ -1087,32 +1098,37 @@ class TestTaskTimerExecution:
         finally:
             exec_on_canister(
                 "import os; os.remove('/test_wget_run.py') if os.path.exists('/test_wget_run.py') else None",
-                canister, network,
+                canister,
+                network,
             )
             _cleanup_task(tid, canister, network)
 
     def test_command_flag_wget_and_run(self, canister_reachable, canister, network):
         """--command flag: wget downloads, run executes — two separate steps."""
         url = "https://raw.githubusercontent.com/smart-social-contracts/basilisk/refs/heads/main/tests/fixtures/e2e_hello.py"
-        result = _task_magic(
-            "%task create _test_cmd_flag", canister, network
-        )
+        result = _task_magic("%task create _test_cmd_flag", canister, network)
         tid = _extract_task_id(result)
         assert tid, f"Failed to create task: {result}"
         try:
             # Step 0: async wget via --command
             add0 = _task_magic(
                 f'%task add-step {tid} --command "wget {url} test_cmd_flag.py"',
-                canister, network,
+                canister,
+                network,
             )
-            assert "step 0" in add0.lower() or "async" in add0.lower(), f"Unexpected: {add0}"
+            assert (
+                "step 0" in add0.lower() or "async" in add0.lower()
+            ), f"Unexpected: {add0}"
 
             # Step 1: sync run via --command
             add1 = _task_magic(
                 f'%task add-step {tid} --command "run test_cmd_flag.py"',
-                canister, network,
+                canister,
+                network,
             )
-            assert "step 1" in add1.lower() or "sync" in add1.lower(), f"Unexpected: {add1}"
+            assert (
+                "step 1" in add1.lower() or "sync" in add1.lower()
+            ), f"Unexpected: {add1}"
 
             # Verify task has 2 steps
             info = _task_magic(f"%task info {tid}", canister, network)
@@ -1120,14 +1136,17 @@ class TestTaskTimerExecution:
 
             _task_magic(f"%task start {tid}", canister, network)
             info = _wait_for_task_execution(tid, canister, network, timeout=90)
-            assert "Executions: 0" not in info, f"Command-flag timer never fired: {info}"
+            assert (
+                "Executions: 0" not in info
+            ), f"Command-flag timer never fired: {info}"
 
             log = _task_magic(f"%task log {tid}", canister, network)
             assert "completed" in log, f"Expected completed: {log}"
         finally:
             exec_on_canister(
                 "import os; os.remove('/test_cmd_flag.py') if os.path.exists('/test_cmd_flag.py') else None",
-                canister, network,
+                canister,
+                network,
             )
             _cleanup_task(tid, canister, network)
 
@@ -1147,15 +1166,14 @@ class TestTaskTimerExecution:
             "    _decoded = ic.candid_decode(_result.Ok)\n"
             "    return 'CALL_RAW_OK:' + str(_decoded)\n"
         )
-        result = _task_magic(
-            "%task create _test_call_raw_gen", canister, network
-        )
+        result = _task_magic("%task create _test_call_raw_gen", canister, network)
         tid = _extract_task_id(result)
         assert tid, f"Failed to create task: {result}"
         try:
             _task_magic(
                 f'%task add-step {tid} --async --code "{call_raw_code}"',
-                canister, network,
+                canister,
+                network,
             )
             _task_magic(f"%task start {tid}", canister, network)
             info = _wait_for_task_execution(tid, canister, network, timeout=30)
@@ -1172,14 +1190,13 @@ class TestTaskTimerExecution:
 # Task lookup by name (not just ID)
 # ===========================================================================
 
+
 class TestTaskNameLookup:
     """Test that %task subcommands accept task names in addition to IDs."""
 
     def test_info_by_name(self, canister_reachable, canister, network):
         """Info should work when given a task name instead of ID."""
-        create_result = _task_magic(
-            "%task create _test_name_info", canister, network
-        )
+        create_result = _task_magic("%task create _test_name_info", canister, network)
         tid = _extract_task_id(create_result)
         assert tid
         try:
@@ -1191,9 +1208,7 @@ class TestTaskNameLookup:
 
     def test_log_by_name(self, canister_reachable, canister, network):
         """Log should work when given a task name."""
-        create_result = _task_magic(
-            "%task create _test_name_log", canister, network
-        )
+        create_result = _task_magic("%task create _test_name_log", canister, network)
         tid = _extract_task_id(create_result)
         assert tid
         try:
@@ -1205,9 +1220,7 @@ class TestTaskNameLookup:
 
     def test_start_by_name(self, canister_reachable, canister, network):
         """Start should work when given a task name."""
-        create_result = _task_magic(
-            "%task create _test_name_start", canister, network
-        )
+        create_result = _task_magic("%task create _test_name_start", canister, network)
         tid = _extract_task_id(create_result)
         assert tid
         try:
@@ -1219,9 +1232,7 @@ class TestTaskNameLookup:
 
     def test_stop_by_name(self, canister_reachable, canister, network):
         """Stop should work when given a task name."""
-        create_result = _task_magic(
-            "%task create _test_name_stop", canister, network
-        )
+        create_result = _task_magic("%task create _test_name_stop", canister, network)
         tid = _extract_task_id(create_result)
         assert tid
         try:
@@ -1233,9 +1244,7 @@ class TestTaskNameLookup:
 
     def test_delete_by_name(self, canister_reachable, canister, network):
         """Delete should work when given a task name."""
-        create_result = _task_magic(
-            "%task create _test_name_delete", canister, network
-        )
+        create_result = _task_magic("%task create _test_name_delete", canister, network)
         tid = _extract_task_id(create_result)
         assert tid
         result = _task_magic("%task delete _test_name_delete", canister, network)
@@ -1280,6 +1289,7 @@ class TestTaskNameLookup:
 # %task create --file option
 # ===========================================================================
 
+
 class TestTaskCreateFile:
     """Test %task create --file option."""
 
@@ -1288,11 +1298,13 @@ class TestTaskCreateFile:
         # Write a file to the canister first
         exec_on_canister(
             "with open('/_test_task_file.py', 'w') as f: f.write('print(77)')",
-            canister, network,
+            canister,
+            network,
         )
         result = _task_magic(
             "%task create _test_file_opt --file /_test_task_file.py",
-            canister, network,
+            canister,
+            network,
         )
         tid = _extract_task_id(result)
         assert tid, f"Failed to create task: {result}"
@@ -1308,11 +1320,13 @@ class TestTaskCreateFile:
         """Creating with --file and every Ns should set up code + schedule."""
         exec_on_canister(
             "with open('/_test_task_file2.py', 'w') as f: f.write('print(88)')",
-            canister, network,
+            canister,
+            network,
         )
         result = _task_magic(
             "%task create _test_file_sched every 60s --file /_test_task_file2.py",
-            canister, network,
+            canister,
+            network,
         )
         tid = _extract_task_id(result)
         assert tid, f"Failed to create task: {result}"
@@ -1329,11 +1343,13 @@ class TestTaskCreateFile:
         """Running a task created with --file should execute the file's code."""
         exec_on_canister(
             "with open('/_test_run_file.py', 'w') as f: f.write('print(55)')",
-            canister, network,
+            canister,
+            network,
         )
         result = _task_magic(
             "%task create _test_run_file --file /_test_run_file.py",
-            canister, network,
+            canister,
+            network,
         )
         tid = _extract_task_id(result)
         assert tid
@@ -1351,6 +1367,7 @@ class TestTaskCreateFile:
 # Timestamps in %task log and %task info
 # ===========================================================================
 
+
 class TestTaskTimestamps:
     """Test that timestamps appear in task log and info after execution."""
 
@@ -1365,12 +1382,15 @@ class TestTaskTimestamps:
             _task_magic(f"%task run {tid}", canister, network)
             log = _task_magic(f"%task log {tid}", canister, network)
             assert "UTC" in log
-            assert re.search(r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} UTC', log), \
-                f"Expected timestamp in log: {log}"
+            assert re.search(
+                r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} UTC", log
+            ), f"Expected timestamp in log: {log}"
         finally:
             _cleanup_task(tid, canister, network)
 
-    def test_info_shows_last_execution_time(self, canister_reachable, canister, network):
+    def test_info_shows_last_execution_time(
+        self, canister_reachable, canister, network
+    ):
         """After running a task, %task info should show last execution time."""
         result = _task_magic(
             '%task create _test_ts_info --code "print(2)"', canister, network
@@ -1385,7 +1405,9 @@ class TestTaskTimestamps:
         finally:
             _cleanup_task(tid, canister, network)
 
-    def test_list_shows_last_execution_time(self, canister_reachable, canister, network):
+    def test_list_shows_last_execution_time(
+        self, canister_reachable, canister, network
+    ):
         """After running a task, %task list should show last execution time."""
         result = _task_magic(
             '%task create _test_ts_list --code "print(3)"', canister, network
@@ -1406,6 +1428,7 @@ class TestTaskTimestamps:
 # ===========================================================================
 # %task log output limiting and --follow
 # ===========================================================================
+
 
 class TestTaskLogFeatures:
     """Test log output limiting and --follow flag."""
@@ -1430,9 +1453,7 @@ class TestTaskLogFeatures:
 
     def test_follow_flag_accepted(self, canister_reachable, canister, network):
         """--follow flag should be accepted (returns empty since task has no executions)."""
-        result = _task_magic(
-            "%task create _test_follow_flag", canister, network
-        )
+        result = _task_magic("%task create _test_follow_flag", canister, network)
         tid = _extract_task_id(result)
         assert tid
         try:
@@ -1440,6 +1461,7 @@ class TestTaskLogFeatures:
             # the flag doesn't cause an error by checking _handle_task directly.
             # The follow loop would run forever, so instead test the query works.
             from ic_basilisk_toolkit.shell import _task_log_follow_query, canister_exec
+
             query_code = _task_log_follow_query(str(tid))
             query_result = canister_exec(query_code, canister, network)
             # Should contain the task status line
@@ -1456,6 +1478,7 @@ class TestTaskLogFeatures:
 # ===========================================================================
 # %task add-step — multi-step task creation
 # ===========================================================================
+
 
 class TestTaskAddStep:
     """Test %task add-step for building multi-step tasks."""
@@ -1486,10 +1509,10 @@ class TestTaskAddStep:
         assert tid
         try:
             _task_magic(
-                f'%task add-step {tid} --code "print(\'step0\')"', canister, network
+                f"%task add-step {tid} --code \"print('step0')\"", canister, network
             )
             _task_magic(
-                f'%task add-step {tid} --code "print(\'step1\')"', canister, network
+                f"%task add-step {tid} --code \"print('step1')\"", canister, network
             )
             info = _task_magic(f"%task info {tid}", canister, network)
             # Should show 2 steps
@@ -1518,7 +1541,8 @@ class TestTaskAddStep:
         try:
             step_result = _task_magic(
                 f'%task add-step {tid} --code "def async_task(): yield" --async',
-                canister, network,
+                canister,
+                network,
             )
             assert "Added step" in step_result
             assert "async" in step_result
@@ -1533,21 +1557,22 @@ class TestTaskAddStep:
         try:
             step_result = _task_magic(
                 '%task add-step _test_addstep_name --code "print(99)"',
-                canister, network,
+                canister,
+                network,
             )
             assert "Added step" in step_result
         finally:
             _cleanup_task(tid, canister, network)
 
-    def test_add_step_missing_code_shows_usage(self, canister_reachable, canister, network):
+    def test_add_step_missing_code_shows_usage(
+        self, canister_reachable, canister, network
+    ):
         """add-step without --code or --file should show usage."""
         result = _task_magic("%task create _test_addstep_nocode", canister, network)
         tid = _extract_task_id(result)
         assert tid
         try:
-            usage_result = _task_magic(
-                f"%task add-step {tid}", canister, network
-            )
+            usage_result = _task_magic(f"%task add-step {tid}", canister, network)
             assert "Usage" in usage_result or "add-step" in usage_result
         finally:
             _cleanup_task(tid, canister, network)
@@ -1570,6 +1595,7 @@ class TestTaskAddStep:
 # Multi-step task execution — %task run / %task start
 # ===========================================================================
 
+
 class TestMultiStepExecution:
     """Test executing tasks with multiple steps."""
 
@@ -1580,10 +1606,10 @@ class TestMultiStepExecution:
         assert tid
         try:
             _task_magic(
-                f'%task add-step {tid} --code "print(\'hello\')"', canister, network
+                f"%task add-step {tid} --code \"print('hello')\"", canister, network
             )
             _task_magic(
-                f'%task add-step {tid} --code "print(\'world\')"', canister, network
+                f"%task add-step {tid} --code \"print('world')\"", canister, network
             )
             run_result = _task_magic(f"%task run {tid}", canister, network)
             assert "completed" in run_result.lower()
@@ -1603,7 +1629,8 @@ class TestMultiStepExecution:
         try:
             _task_magic(
                 f'%task add-step {tid} --code "def async_task(): yield" --async',
-                canister, network,
+                canister,
+                network,
             )
             run_result = _task_magic(f"%task run {tid}", canister, network)
             assert "async" in run_result.lower()
@@ -1614,15 +1641,16 @@ class TestMultiStepExecution:
     def test_start_two_sync_steps(self, canister_reachable, canister, network):
         """Starting a 2-step task should execute both via timers."""
         import time
+
         result = _task_magic("%task create _test_2step_start", canister, network)
         tid = _extract_task_id(result)
         assert tid
         try:
             _task_magic(
-                f'%task add-step {tid} --code "print(\'alpha\')"', canister, network
+                f"%task add-step {tid} --code \"print('alpha')\"", canister, network
             )
             _task_magic(
-                f'%task add-step {tid} --code "print(\'beta\')"', canister, network
+                f"%task add-step {tid} --code \"print('beta')\"", canister, network
             )
             start_result = _task_magic(f"%task start {tid}", canister, network)
             assert "timer" in start_result.lower()
@@ -1639,9 +1667,11 @@ class TestMultiStepExecution:
     def test_start_recurring_accumulates(self, canister_reachable, canister, network):
         """A recurring task should accumulate multiple executions over time."""
         import time
+
         result = _task_magic(
-            '%task create _test_recur_accum every 3s --code "print(\'tick\')"',
-            canister, network,
+            "%task create _test_recur_accum every 3s --code \"print('tick')\"",
+            canister,
+            network,
         )
         tid = _extract_task_id(result)
         assert tid, f"Failed to create task: {result}"
@@ -1655,27 +1685,34 @@ class TestMultiStepExecution:
             log = _task_magic(f"%task log {tid}", canister, network)
             # Should have at least 2 executions (initial + 1 recurrence)
             import re
-            m = re.search(r'(\d+) execution', log)
-            assert m and int(m.group(1)) >= 2, \
-                f"Expected multiple executions, got: {log}"
+
+            m = re.search(r"(\d+) execution", log)
+            assert (
+                m and int(m.group(1)) >= 2
+            ), f"Expected multiple executions, got: {log}"
             assert "tick" in log
         finally:
             _task_magic(f"%task stop {tid}", canister, network)
             _cleanup_task(tid, canister, network)
 
-    def test_two_recurring_tasks_independent(self, canister_reachable, canister, network):
+    def test_two_recurring_tasks_independent(
+        self, canister_reachable, canister, network
+    ):
         """Two recurring tasks should run independently without interference."""
         import time
+
         result_a = _task_magic(
-            '%task create _test_indep_A every 3s --code "print(\'AAA\')"',
-            canister, network,
+            "%task create _test_indep_A every 3s --code \"print('AAA')\"",
+            canister,
+            network,
         )
         tid_a = _extract_task_id(result_a)
         assert tid_a, f"Failed to create task A: {result_a}"
 
         result_b = _task_magic(
-            '%task create _test_indep_B every 3s --code "print(\'BBB\')"',
-            canister, network,
+            "%task create _test_indep_B every 3s --code \"print('BBB')\"",
+            canister,
+            network,
         )
         tid_b = _extract_task_id(result_b)
         assert tid_b, f"Failed to create task B: {result_b}"
@@ -1695,20 +1732,27 @@ class TestMultiStepExecution:
 
             # Task A should have run and contain only AAA output (not BBB)
             assert "AAA" in log_a, f"Task A missing AAA output: {log_a}"
-            assert "BBB" not in log_a, f"Task A contains BBB (namespace collision!): {log_a}"
+            assert (
+                "BBB" not in log_a
+            ), f"Task A contains BBB (namespace collision!): {log_a}"
 
             # Task B should have run and contain only BBB output (not AAA)
             assert "BBB" in log_b, f"Task B missing BBB output: {log_b}"
-            assert "AAA" not in log_b, f"Task B contains AAA (namespace collision!): {log_b}"
+            assert (
+                "AAA" not in log_b
+            ), f"Task B contains AAA (namespace collision!): {log_b}"
 
             # Both should have at least 2 executions
             import re
-            m_a = re.search(r'(\d+) execution', log_a)
-            assert m_a and int(m_a.group(1)) >= 2, \
-                f"Task A should have multiple executions: {log_a}"
-            m_b = re.search(r'(\d+) execution', log_b)
-            assert m_b and int(m_b.group(1)) >= 2, \
-                f"Task B should have multiple executions: {log_b}"
+
+            m_a = re.search(r"(\d+) execution", log_a)
+            assert (
+                m_a and int(m_a.group(1)) >= 2
+            ), f"Task A should have multiple executions: {log_a}"
+            m_b = re.search(r"(\d+) execution", log_b)
+            assert (
+                m_b and int(m_b.group(1)) >= 2
+            ), f"Task B should have multiple executions: {log_b}"
         finally:
             _task_magic(f"%task stop {tid_a}", canister, network)
             _task_magic(f"%task stop {tid_b}", canister, network)
@@ -1719,6 +1763,7 @@ class TestMultiStepExecution:
 # ===========================================================================
 # %wget — download file into canister
 # ===========================================================================
+
 
 class TestWget:
     """Test %wget command for downloading files into canister filesystem."""
@@ -1736,6 +1781,7 @@ class TestWget:
         result = _task_magic(f"%wget {url} {dest}", canister, network)
         if "No consensus" in result:
             import pytest
+
             pytest.skip(
                 "IC HTTP outcall consensus failure (CDN-served content); "
                 "not a code bug — retry later"
@@ -1752,12 +1798,15 @@ class TestWget:
         dest = "/test_wget_bad.txt"
         result = _task_magic(f"%wget {url} {dest}", canister, network)
         # Should contain error info (either dfx error or download failed)
-        assert "error" in result.lower() or "failed" in result.lower() or "Err" in result
+        assert (
+            "error" in result.lower() or "failed" in result.lower() or "Err" in result
+        )
 
 
 # ===========================================================================
 # %task retry / resume
 # ===========================================================================
+
 
 class TestTaskRetryResume:
     """Test %task retry and %task resume commands."""
@@ -1789,8 +1838,9 @@ class TestTaskRetryResume:
     def test_retry_failed_task(self, canister_reachable, canister, network):
         """retry should work on a failed task."""
         result = _task_magic(
-            '%task create _test_retry_fail --code "raise Exception(\'boom\')"',
-            canister, network,
+            "%task create _test_retry_fail --code \"raise Exception('boom')\"",
+            canister,
+            network,
         )
         tid = _extract_task_id(result)
         assert tid
@@ -1819,12 +1869,14 @@ class TestTaskRetryResume:
         try:
             # Add two steps: step 0 succeeds, step 1 will fail
             _task_magic(
-                f'%task add-step {tid} --code "print(\'step0_ok\')"',
-                canister, network,
+                f"%task add-step {tid} --code \"print('step0_ok')\"",
+                canister,
+                network,
             )
             _task_magic(
-                f'%task add-step {tid} --code "raise Exception(\'step1_fail\')"',
-                canister, network,
+                f"%task add-step {tid} --code \"raise Exception('step1_fail')\"",
+                canister,
+                network,
             )
 
             # Start via timer — step 0 succeeds, step 1 fails
@@ -1863,7 +1915,7 @@ class TestTaskRetryResume:
 
 # Async step code: downloads a Python file from GitHub via IC HTTP outcall
 # and saves it to /e2e_hello.py on the canister memfs.
-_E2E_DOWNLOAD_STEP_CODE = '''\
+_E2E_DOWNLOAD_STEP_CODE = """\
 from basilisk.canisters.management import management_canister
 
 def async_task():
@@ -1883,7 +1935,7 @@ def async_task():
         with open("/e2e_hello.py", "w") as f:
             f.write(content)
     return str(result)[:500]
-'''
+"""
 
 
 class TestE2EWriteAndRun:
@@ -1902,14 +1954,16 @@ class TestE2EWriteAndRun:
             # 2. Step 1: write a Python script to memfs
             step1 = _task_magic(
                 f'''{"%"}task add-step {tid} --code "with open('/e2e_writerun.py','w') as f: f.write('print(\\\"BASILISK_E2E_OK_42\\\")')"''',
-                canister, network,
+                canister,
+                network,
             )
             assert "Added step" in step1, f"Step 1 failed: {step1}"
 
             # 3. Step 2: exec the written file
             step2 = _task_magic(
                 f"%task add-step {tid} --file /e2e_writerun.py",
-                canister, network,
+                canister,
+                network,
             )
             assert "Added step" in step2, f"Step 2 failed: {step2}"
 
@@ -1922,9 +1976,9 @@ class TestE2EWriteAndRun:
 
             # 6. Verify output in task log
             log = _task_magic(f"%task log {tid}", canister, network)
-            assert "BASILISK_E2E_OK_42" in log, (
-                f"Expected 'BASILISK_E2E_OK_42' in task log but got:\n{log}"
-            )
+            assert (
+                "BASILISK_E2E_OK_42" in log
+            ), f"Expected 'BASILISK_E2E_OK_42' in task log but got:\n{log}"
         finally:
             _cleanup_task(tid, canister, network)
 
@@ -1943,6 +1997,7 @@ class TestE2EDownloadAndRun:
         """Two-step task: async download a .py via HTTP outcall, then exec it."""
         import base64
         import time
+
         from tests.conftest import exec_on_canister
 
         # 1. Upload the async download code to canister memfs
@@ -1966,7 +2021,8 @@ class TestE2EDownloadAndRun:
             # 3. Add async step: download the Python file
             step1 = _task_magic(
                 f"%task add-step {tid} --file /e2e_download_step.py --async",
-                canister, network,
+                canister,
+                network,
             )
             assert "Added step" in step1, f"Step 1 failed: {step1}"
             assert "async" in step1
@@ -1974,7 +2030,8 @@ class TestE2EDownloadAndRun:
             # 4. Add sync step: exec the downloaded file
             step2 = _task_magic(
                 f"%task add-step {tid} --file /e2e_hello.py",
-                canister, network,
+                canister,
+                network,
             )
             assert "Added step" in step2, f"Step 2 failed: {step2}"
             assert "sync" in step2
@@ -1990,13 +2047,14 @@ class TestE2EDownloadAndRun:
             log = _task_magic(f"%task log {tid}", canister, network)
             if "No consensus" in log:
                 import pytest
+
                 pytest.skip(
                     "IC HTTP outcall consensus failure (CDN-served content); "
                     "not a code bug — retry later"
                 )
-            assert "BASILISK_E2E_OK_42" in log, (
-                f"Expected 'BASILISK_E2E_OK_42' in task log but got:\n{log}"
-            )
+            assert (
+                "BASILISK_E2E_OK_42" in log
+            ), f"Expected 'BASILISK_E2E_OK_42' in task log but got:\n{log}"
         finally:
             _cleanup_task(tid, canister, network)
 
@@ -2005,11 +2063,17 @@ class TestE2EDownloadAndRun:
 # Persistent file storage — survives canister upgrade
 # ===========================================================================
 
+
 @pytest.mark.skipif(
-    not os.path.isfile(os.path.join(
-        os.path.dirname(__file__),
-        "test_canister", ".basilisk", "shell_test", "shell_test.wasm",
-    )),
+    not os.path.isfile(
+        os.path.join(
+            os.path.dirname(__file__),
+            "test_canister",
+            ".basilisk",
+            "shell_test",
+            "shell_test.wasm",
+        )
+    ),
     reason="Pre-built WASM not found (requires local build of test canister)",
 )
 class TestPersistentFileStorage:
@@ -2018,7 +2082,10 @@ class TestPersistentFileStorage:
     # Path to the pre-built WASM for triggering upgrades
     _WASM_PATH = os.path.join(
         os.path.dirname(__file__),
-        "test_canister", ".basilisk", "shell_test", "shell_test.wasm",
+        "test_canister",
+        ".basilisk",
+        "shell_test",
+        "shell_test.wasm",
     )
 
     def _upgrade_canister(self, canister, network, retries=2):
@@ -2027,10 +2094,16 @@ class TestPersistentFileStorage:
         Retries on transient errors; skips the test on persistent IC failures.
         """
         import time as _time
+
         cmd = [
-            "dfx", "canister", "install", canister,
-            "--mode", "upgrade",
-            "--wasm", self._WASM_PATH,
+            "dfx",
+            "canister",
+            "install",
+            canister,
+            "--mode",
+            "upgrade",
+            "--wasm",
+            self._WASM_PATH,
             "--upgrade-unchanged",
         ]
         if network:
@@ -2067,7 +2140,8 @@ class TestPersistentFileStorage:
         write_result = exec_on_canister(
             f"with open('{fpath}', 'w') as f: f.write('{marker}')\n"
             f"print('written')",
-            canister, network,
+            canister,
+            network,
         )
         assert "written" in write_result, f"Write failed: {write_result}"
 
@@ -2102,7 +2176,8 @@ class TestPersistentFileStorage:
         write_result = exec_on_canister(
             f"with open('{fpath}', 'wb') as f: f.write(bytes(range(256)))\n"
             f"print('written')",
-            canister, network,
+            canister,
+            network,
         )
         assert "written" in write_result
 
@@ -2115,7 +2190,8 @@ class TestPersistentFileStorage:
             f"data = open('{fpath}', 'rb').read()\n"
             f"print(len(data))\n"
             f"print(data == bytes(range(256)))",
-            canister, network,
+            canister,
+            network,
         )
         assert "256" in post, f"Binary length mismatch: {post}"
         assert "True" in post, f"Binary content mismatch: {post}"
@@ -2134,7 +2210,8 @@ class TestPersistentFileStorage:
             f"import os; os.makedirs('/tmp', exist_ok=True)\n"
             f"with open('{fpath}', 'w') as f: f.write('volatile')\n"
             f"print('written')",
-            canister, network,
+            canister,
+            network,
         )
         assert "written" in write_result
 
@@ -2144,9 +2221,9 @@ class TestPersistentFileStorage:
 
         # 3. /tmp/ file should be gone
         post = exec_on_canister(
-            f"import os\n"
-            f"print(os.path.exists('{fpath}'))",
-            canister, network,
+            f"import os\n" f"print(os.path.exists('{fpath}'))",
+            canister,
+            network,
         )
         assert "False" in post, f"/tmp/ file should not survive upgrade: {post}"
 
@@ -2161,7 +2238,8 @@ class TestPersistentFileStorage:
             f"import os; os.makedirs('/data/subdir', exist_ok=True)\n"
             f"with open('{fpath}', 'w') as f: f.write('nested_ok')\n"
             f"print('written')",
-            canister, network,
+            canister,
+            network,
         )
         assert "written" in write_result
 
@@ -2176,13 +2254,15 @@ class TestPersistentFileStorage:
         # 4. Cleanup
         exec_on_canister(
             "import os, shutil; shutil.rmtree('/data', ignore_errors=True)",
-            canister, network,
+            canister,
+            network,
         )
 
 
 # ===========================================================================
 # %task add-step in _TASK_USAGE
 # ===========================================================================
+
 
 class TestUsageStrings:
     """Verify usage strings include new features."""

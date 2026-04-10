@@ -90,13 +90,17 @@ def cmd_exec(args: list[str]):
     i = 0
     while i < len(args):
         if args[i] == "--canister" and i + 1 < len(args):
-            canister = args[i + 1]; i += 2
+            canister = args[i + 1]
+            i += 2
         elif args[i] == "--network" and i + 1 < len(args):
-            network = args[i + 1]; i += 2
+            network = args[i + 1]
+            i += 2
         elif args[i] == "-f" and i + 1 < len(args):
-            file_path = args[i + 1]; i += 2
+            file_path = args[i + 1]
+            i += 2
         else:
-            code_parts.append(args[i]); i += 1
+            code_parts.append(args[i])
+            i += 1
 
     # Get code from file or args
     if file_path:
@@ -112,14 +116,20 @@ def cmd_exec(args: list[str]):
         code = sys.stdin.read()
 
     if not code.strip():
-        print("Error: no code provided. Usage: basilisk-toolkit exec [--canister <c>] [--network <n>] [-f <file>] <code>", file=sys.stderr)
+        print(
+            "Error: no code provided. Usage: basilisk-toolkit exec [--canister <c>] [--network <n>] [-f <file>] <code>",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     # Auto-detect canister if not specified
     if not canister:
         canister = _detect_canister_from_dfx()
         if not canister:
-            print("Error: --canister required (could not auto-detect from dfx.json)", file=sys.stderr)
+            print(
+                "Error: --canister required (could not auto-detect from dfx.json)",
+                file=sys.stderr,
+            )
             sys.exit(1)
 
     # Build dfx command
@@ -160,11 +170,13 @@ def main():
 
     elif command == "shell":
         from ic_basilisk_toolkit.shell import main as shell_main
+
         sys.argv = ["basilisk-toolkit-shell"] + sys.argv[2:]
         shell_main()
 
     elif command == "sshd":
         from ic_basilisk_toolkit.sshd import main as sshd_main
+
         sys.argv = ["basilisk-toolkit-sshd"] + sys.argv[2:]
         sshd_main()
 
@@ -173,6 +185,7 @@ def main():
 
     elif command == "--version":
         from ic_basilisk_toolkit import __version__
+
         print(__version__)
 
     else:

@@ -26,8 +26,12 @@ import pytest
 # ---------------------------------------------------------------------------
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from ic_basilisk_toolkit.shell import canister_exec, _parse_candid, _handle_magic, _TASK_RESOLVE
-
+from ic_basilisk_toolkit.shell import (
+    _TASK_RESOLVE,
+    _handle_magic,
+    _parse_candid,
+    canister_exec,
+)
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -48,6 +52,7 @@ def _get_network():
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture(scope="session")
 def canister():
@@ -89,7 +94,8 @@ def canister_reachable(canister, network, dfx_available):
         "    if _actual != _stored:\n"
         "        Task.db().save('_system', Task.get_full_type_name() + '_count', str(_actual))\n"
         "print('task_entities_ready')\n",
-        canister, network,
+        canister,
+        network,
     )
     return True
 

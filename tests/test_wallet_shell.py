@@ -17,24 +17,24 @@ import pytest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from ic_basilisk_toolkit.shell import (
-    _parse_subaccount,
+    _INDEX_IDS,
+    _LEDGER_DECIMALS,
+    _LEDGER_FEES,
+    _LEDGER_IDS,
+    _LEDGER_SYMBOLS,
     _candid_subaccount,
     _handle_wallet,
+    _parse_subaccount,
     _wallet_balance,
     _wallet_deposit,
     _wallet_history,
-    _LEDGER_IDS,
-    _LEDGER_FEES,
-    _LEDGER_DECIMALS,
-    _LEDGER_SYMBOLS,
-    _INDEX_IDS,
 )
 from tests.conftest import magic_on_canister
-
 
 # ===========================================================================
 # Pure unit tests — no canister needed
 # ===========================================================================
+
 
 class TestParseSubaccount:
     """Test _parse_subaccount argument extraction."""
@@ -70,9 +70,7 @@ class TestParseSubaccount:
         assert from_sub == "02"
 
     def test_flags_in_middle(self):
-        cleaned, sub, from_sub = _parse_subaccount(
-            "ckbtc --sub ff balance"
-        )
+        cleaned, sub, from_sub = _parse_subaccount("ckbtc --sub ff balance")
         assert cleaned == "ckbtc balance"
         assert sub == "ff"
 
@@ -200,6 +198,7 @@ class TestHandleWalletDispatch:
 # Integration tests — require live canister + dfx
 # ===========================================================================
 
+
 class TestWalletBalance:
     """Test %wallet balance against a live canister."""
 
@@ -225,7 +224,9 @@ class TestWalletBalance:
 
     def test_balance_with_subaccount(self, canister_reachable, canister, network):
         sub = "0000000000000000000000000000000000000000000000000000000000000001"
-        result = magic_on_canister(f"%wallet ckbtc balance --sub {sub}", canister, network)
+        result = magic_on_canister(
+            f"%wallet ckbtc balance --sub {sub}", canister, network
+        )
         assert "ckBTC" in result
         assert "e8" in result
 
@@ -280,13 +281,21 @@ class TestWalletOneshot:
 
     def _run_shell(self, code, canister, network):
         cmd = [
-            sys.executable, "-m", "basilisk.shell",
-            "--canister", canister,
-            "--network", network,
-            "-c", code,
+            sys.executable,
+            "-m",
+            "basilisk.shell",
+            "--canister",
+            canister,
+            "--network",
+            network,
+            "-c",
+            code,
         ]
         r = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=120,
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=120,
             cwd=os.path.join(os.path.dirname(__file__), ".."),
         )
         return r.stdout.strip(), r.stderr.strip(), r.returncode

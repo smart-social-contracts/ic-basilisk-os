@@ -40,16 +40,18 @@ Available master keys on ICP:
 
 from basilisk import Async, Principal, ic
 from basilisk.canisters.management import (
-    management_canister,
     VetKDCurve,
+    VetKDDeriveKeyArgs,
     VetKDKeyId,
     VetKDPublicKeyArgs,
-    VetKDDeriveKeyArgs,
+    management_canister,
 )
+
 try:
     from ic_python_logging import get_logger
 except ImportError:
     import logging
+
     get_logger = logging.getLogger
 
 logger = get_logger("basilisk.os.vetkeys")
@@ -154,8 +156,7 @@ class VetKeyService:
             key_id=self._key_id(),
         )
         logger.info(
-            f"vetkd_public_key: key={self._key_name} "
-            f"context_len={len(context)}"
+            f"vetkd_public_key: key={self._key_name} " f"context_len={len(context)}"
         )
         result = yield management_canister.vetkd_public_key(args)
         pub_key = result.public_key

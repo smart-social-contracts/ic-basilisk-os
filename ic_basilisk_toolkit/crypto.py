@@ -47,10 +47,12 @@ Usage (canister-side)::
 """
 
 from ic_python_db import Entity, String, TimestampedMixin
+
 try:
     from ic_python_logging import get_logger
 except ImportError:
     import logging
+
     get_logger = logging.getLogger
 
 logger = get_logger("basilisk.os.crypto")
@@ -130,6 +132,7 @@ class CryptoGroupMember(Entity, TimestampedMixin):
 # EncryptedString field type
 # ---------------------------------------------------------------------------
 
+
 class EncryptedString(String):
     """
     A ``String`` subclass that marks a field as encrypted.
@@ -145,12 +148,14 @@ class EncryptedString(String):
             first_name = EncryptedString()    # encrypted at rest
             email = EncryptedString()         # encrypted at rest
     """
+
     pass
 
 
 # ---------------------------------------------------------------------------
 # Format helpers
 # ---------------------------------------------------------------------------
+
 
 def encode_envelope(wrapped_dek_hex: str) -> str:
     """Encode a wrapped DEK into the standard envelope format.
@@ -175,7 +180,7 @@ def decode_envelope(envelope: str) -> str:
     """
     if not envelope or not envelope.startswith("env:v=2:k="):
         raise ValueError(f"Invalid envelope format: {envelope!r}")
-    return envelope[len("env:v=2:k="):]
+    return envelope[len("env:v=2:k=") :]
 
 
 def encode_ciphertext(iv_hex: str, data_hex: str) -> str:
@@ -202,7 +207,7 @@ def decode_ciphertext(ciphertext: str) -> tuple:
     if not ciphertext or not ciphertext.startswith("enc:v=2:"):
         raise ValueError(f"Invalid ciphertext format: {ciphertext!r}")
     parts = {}
-    for segment in ciphertext[len("enc:v=2:"):].split(":"):
+    for segment in ciphertext[len("enc:v=2:") :].split(":"):
         if "=" in segment:
             k, v = segment.split("=", 1)
             parts[k] = v
@@ -224,6 +229,7 @@ def is_envelope(value: str) -> bool:
 # ---------------------------------------------------------------------------
 # CryptoService
 # ---------------------------------------------------------------------------
+
 
 class CryptoService:
     """
@@ -271,6 +277,7 @@ class CryptoService:
 
     def _init_scope(self, scope, creator_principal=None):
         from basilisk import ic
+
         if creator_principal is None:
             creator_principal = ic.caller().to_str()
 
@@ -282,6 +289,7 @@ class CryptoService:
 
         # Generate random DEK
         import os as _os
+
         dek = _os.urandom(32)
         dek_hex = dek.hex()
 
@@ -306,7 +314,9 @@ class CryptoService:
             principal=creator_principal,
             wrapped_dek=encode_envelope(dek_hex),
         )
-        logger.info(f"Created envelope for scope={scope!r} principal={creator_principal}")
+        logger.info(
+            f"Created envelope for scope={scope!r} principal={creator_principal}"
+        )
         return dek
 
     # ------------------------------------------------------------------
@@ -334,7 +344,9 @@ class CryptoService:
         if existing:
             if wrapped_dek_hex:
                 existing.wrapped_dek = encode_envelope(wrapped_dek_hex)
-            logger.info(f"Updated envelope for scope={scope!r} principal={target_principal}")
+            logger.info(
+                f"Updated envelope for scope={scope!r} principal={target_principal}"
+            )
             return existing
 
         envelope = KeyEnvelope(
@@ -370,7 +382,9 @@ class CryptoService:
             self.grant_access(scope, principal, dek_hex)
             count += 1
 
-        logger.info(f"Granted group access: scope={scope!r} group={group_name!r} ({count} members)")
+        logger.info(
+            f"Granted group access: scope={scope!r} group={group_name!r} ({count} members)"
+        )
         return count
 
     def revoke_access(self, scope, target_principal):
@@ -406,7 +420,9 @@ class CryptoService:
             if self.revoke_access(scope, str(member.principal)):
                 count += 1
 
-        logger.info(f"Revoked group access: scope={scope!r} group={group_name!r} ({count} members)")
+        logger.info(
+            f"Revoked group access: scope={scope!r} group={group_name!r} ({count} members)"
+        )
         return count
 
     # ------------------------------------------------------------------
@@ -419,10 +435,7 @@ class CryptoService:
         Returns:
             List of ``KeyEnvelope`` instances for the scope.
         """
-        return [
-            e for e in KeyEnvelope.instances()
-            if str(e.scope) == scope
-        ]
+        return [e for e in KeyEnvelope.instances() if str(e.scope) == scope]
 
     def list_scopes(self, principal):
         """List all scopes a principal has access to.
@@ -430,10 +443,13 @@ class CryptoService:
         Returns:
             List of scope strings.
         """
-        return list(set(
-            str(e.scope) for e in KeyEnvelope.instances()
-            if str(e.principal) == principal
-        ))
+        return list(
+            set(
+                str(e.scope)
+                for e in KeyEnvelope.instances()
+                if str(e.principal) == principal
+            )
+        )
 
     def get_envelope(self, scope, principal):
         """Get the KeyEnvelope for a (scope, principal) pair, or None."""
@@ -533,10 +549,7 @@ class CryptoService:
         Returns:
             List of CryptoGroupMember instances.
         """
-        return [
-            m for m in CryptoGroupMember.instances()
-            if str(m.group) == group_name
-        ]
+        return [m for m in CryptoGroupMember.instances() if str(m.group) == group_name]
 
     # ------------------------------------------------------------------
     # Internal helpers

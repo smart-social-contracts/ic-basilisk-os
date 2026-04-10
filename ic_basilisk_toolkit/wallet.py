@@ -155,13 +155,15 @@ class Wallet:
         """
         tokens = []
         for token in Token.instances():
-            tokens.append({
-                "name": token.name,
-                "ledger": token.ledger,
-                "indexer": token.indexer,
-                "decimals": token.decimals,
-                "fee": token.fee,
-            })
+            tokens.append(
+                {
+                    "name": token.name,
+                    "ledger": token.ledger,
+                    "indexer": token.indexer,
+                    "decimals": token.decimals,
+                    "fee": token.fee,
+                }
+            )
         return tokens
 
     # ------------------------------------------------------------------
@@ -242,14 +244,18 @@ class Wallet:
             if sub.subaccount_hex == subaccount_hex:
                 if label:
                     sub.label = label
-                logger.info(f"Subaccount already registered for {token_name}: {label or subaccount_hex[:16]}")
+                logger.info(
+                    f"Subaccount already registered for {token_name}: {label or subaccount_hex[:16]}"
+                )
                 return sub
         sub = WalletSubaccount(
             token=token,
             subaccount_hex=subaccount_hex,
             label=label or subaccount_hex[:16],
         )
-        logger.info(f"Registered subaccount for {token_name}: {label or subaccount_hex[:16]}")
+        logger.info(
+            f"Registered subaccount for {token_name}: {label or subaccount_hex[:16]}"
+        )
         return sub
 
     def unregister_subaccount(self, token_name, subaccount_hex):
@@ -267,7 +273,9 @@ class Wallet:
         for sub in token.subaccounts:
             if sub.subaccount_hex == subaccount_hex:
                 sub.delete()
-                logger.info(f"Unregistered subaccount for {token_name}: {subaccount_hex[:16]}")
+                logger.info(
+                    f"Unregistered subaccount for {token_name}: {subaccount_hex[:16]}"
+                )
                 return True
         return False
 
@@ -286,11 +294,13 @@ class Wallet:
             return []
         result = []
         for sub in token.subaccounts:
-            result.append({
-                "subaccount_hex": sub.subaccount_hex,
-                "label": sub.label,
-                "balance": sub.balance,
-            })
+            result.append(
+                {
+                    "subaccount_hex": sub.subaccount_hex,
+                    "label": sub.label,
+                    "balance": sub.balance,
+                }
+            )
         return result
 
     # ------------------------------------------------------------------
@@ -337,15 +347,17 @@ class Wallet:
             return []
         transfers = []
         for t in token.transfers:
-            transfers.append({
-                "tx_id": t.tx_id,
-                "kind": t.kind,
-                "from": t.principal_from,
-                "to": t.principal_to,
-                "amount": t.amount,
-                "fee": t.fee,
-                "timestamp": t.timestamp,
-            })
+            transfers.append(
+                {
+                    "tx_id": t.tx_id,
+                    "kind": t.kind,
+                    "from": t.principal_from,
+                    "to": t.principal_to,
+                    "amount": t.amount,
+                    "fee": t.fee,
+                    "timestamp": t.timestamp,
+                }
+            )
         # Sort by timestamp descending, return latest
         transfers.sort(key=lambda x: x["timestamp"], reverse=True)
         return transfers[:limit]
@@ -453,13 +465,22 @@ class Wallet:
             ``{"ok": tx_id}`` on success or ``{"err": error_dict}`` on failure.
         """
         return self._transfer(
-            token_name, to_principal, amount,
-            from_subaccount, to_subaccount, memo,
+            token_name,
+            to_principal,
+            amount,
+            from_subaccount,
+            to_subaccount,
+            memo,
         )
 
     def _transfer(
-        self, token_name, to_principal, amount,
-        from_subaccount=None, to_subaccount=None, memo=None,
+        self,
+        token_name,
+        to_principal,
+        amount,
+        from_subaccount=None,
+        to_subaccount=None,
+        memo=None,
     ) -> Async[dict]:
         if Wallet._pre_transfer_hook is not None:
             hook_result = Wallet._pre_transfer_hook(
@@ -489,9 +510,7 @@ class Wallet:
             amount=amount,
         )
 
-        logger.info(
-            f"transfer({token_name}, to={to_principal}, amount={amount})"
-        )
+        logger.info(f"transfer({token_name}, to={to_principal}, amount={amount})")
 
         transfer_result = yield ledger.icrc1_transfer(args)
 
@@ -502,8 +521,13 @@ class Wallet:
             if "Ok" in raw:
                 tx_id = raw["Ok"]
                 self._record_transfer(
-                    token, str(tx_id), "transfer",
-                    ic.id().to_str(), to_principal, amount, token.fee,
+                    token,
+                    str(tx_id),
+                    "transfer",
+                    ic.id().to_str(),
+                    to_principal,
+                    amount,
+                    token.fee,
                 )
                 logger.info(f"Transfer succeeded: tx_id={tx_id}")
                 return {"ok": tx_id}
@@ -514,8 +538,13 @@ class Wallet:
         # Fallback: treat as tx_id directly
         tx_id = self._to_int(raw)
         self._record_transfer(
-            token, str(tx_id), "transfer",
-            ic.id().to_str(), to_principal, amount, token.fee,
+            token,
+            str(tx_id),
+            "transfer",
+            ic.id().to_str(),
+            to_principal,
+            amount,
+            token.fee,
         )
         logger.info(f"Transfer succeeded: tx_id={tx_id}")
         return {"ok": tx_id}
@@ -554,7 +583,11 @@ class Wallet:
 
         # --- 1. Refresh the default (or explicitly requested) account ----
         default_result = yield from self._refresh_account(
-            token, ledger, canister_principal, subaccount, max_results,
+            token,
+            ledger,
+            canister_principal,
+            subaccount,
+            max_results,
         )
         total_new = default_result["new_txs"]
         default_balance = default_result["balance"]
@@ -566,18 +599,26 @@ class Wallet:
                 try:
                     sub_bytes = bytes.fromhex(sub_entity.subaccount_hex)
                     sub_res = yield from self._refresh_account(
-                        token, ledger, canister_principal, sub_bytes, max_results,
+                        token,
+                        ledger,
+                        canister_principal,
+                        sub_bytes,
+                        max_results,
                     )
                     sub_entity.balance = sub_res["balance"]
                     total_new += sub_res["new_txs"]
-                    sub_results.append({
-                        "subaccount_hex": sub_entity.subaccount_hex,
-                        "label": sub_entity.label,
-                        "balance": sub_res["balance"],
-                        "new_txs": sub_res["new_txs"],
-                    })
+                    sub_results.append(
+                        {
+                            "subaccount_hex": sub_entity.subaccount_hex,
+                            "label": sub_entity.label,
+                            "balance": sub_res["balance"],
+                            "new_txs": sub_res["new_txs"],
+                        }
+                    )
                 except Exception as e:
-                    logger.error(f"Subaccount refresh failed for {token_name}/{sub_entity.label}: {e}")
+                    logger.error(
+                        f"Subaccount refresh failed for {token_name}/{sub_entity.label}: {e}"
+                    )
 
         aggregate_balance = default_balance + sum(s["balance"] for s in sub_results)
 
@@ -594,7 +635,12 @@ class Wallet:
         }
 
     def _refresh_account(
-        self, token, ledger, canister_principal, subaccount, max_results,
+        self,
+        token,
+        ledger,
+        canister_principal,
+        subaccount,
+        max_results,
     ) -> Async[dict]:
         """Refresh balance + transactions for a single account (default or subaccount)."""
         token_name = token.name
@@ -608,7 +654,9 @@ class Wallet:
         )
         balance_raw = self._extract_ok_value(balance_result)
         if isinstance(balance_raw, dict) and "_call_error" in balance_raw:
-            logger.error(f"Ledger balance query failed for {token_name}: {balance_raw['_call_error']}")
+            logger.error(
+                f"Ledger balance query failed for {token_name}: {balance_raw['_call_error']}"
+            )
             balance = 0
         else:
             balance = self._to_int(balance_raw)
@@ -624,7 +672,10 @@ class Wallet:
         else:
             try:
                 new_count = yield from self._sync_indexer_txs(
-                    token, canister_principal, subaccount, max_results,
+                    token,
+                    canister_principal,
+                    subaccount,
+                    max_results,
                 )
             except Exception as e:
                 logger.error(f"Indexer sync failed for {token_name}: {e}")
@@ -632,7 +683,11 @@ class Wallet:
         return {"new_txs": new_count, "balance": balance}
 
     def _sync_indexer_txs(
-        self, token, canister_principal, subaccount, max_results,
+        self,
+        token,
+        canister_principal,
+        subaccount,
+        max_results,
     ) -> Async[int]:
         """Fetch transactions from the indexer for a single account. Returns new tx count."""
         indexer = ICRCIndexer(Principal.from_str(token.indexer))
@@ -684,7 +739,9 @@ class Wallet:
 
             if kind == "transfer" and tx.get("transfer"):
                 t = self._unwrap_opt(tx["transfer"])
-                principal_from = self._extract_principal(t.get("from_") or t.get("from", {}))
+                principal_from = self._extract_principal(
+                    t.get("from_") or t.get("from", {})
+                )
                 principal_to = self._extract_principal(t.get("to", {}))
                 amount = self._to_int(t.get("amount", 0))
                 raw_fee = self._unwrap_opt(t.get("fee", 0))
@@ -696,13 +753,21 @@ class Wallet:
                 amount = self._to_int(m.get("amount", 0))
             elif kind == "burn" and tx.get("burn"):
                 b = self._unwrap_opt(tx["burn"])
-                principal_from = self._extract_principal(b.get("from_") or b.get("from", {}))
+                principal_from = self._extract_principal(
+                    b.get("from_") or b.get("from", {})
+                )
                 principal_to = "burn"
                 amount = self._to_int(b.get("amount", 0))
 
             self._record_transfer(
-                token, tx_id, kind,
-                principal_from, principal_to, amount, fee, timestamp,
+                token,
+                tx_id,
+                kind,
+                principal_from,
+                principal_to,
+                amount,
+                fee,
+                timestamp,
             )
             new_count += 1
 
@@ -716,7 +781,9 @@ class Wallet:
         """Get a token by name or raise ValueError."""
         token = Token[name]
         if token is None:
-            raise ValueError(f"Token '{name}' not registered. Call wallet.register_token() first.")
+            raise ValueError(
+                f"Token '{name}' not registered. Call wallet.register_token() first."
+            )
         return token
 
     def _update_cached_balance(self, token, principal, amount):
@@ -728,8 +795,15 @@ class Wallet:
         WalletBalance(principal=principal, token=token, amount=amount)
 
     def _record_transfer(
-        self, token, tx_id, kind,
-        principal_from, principal_to, amount, fee=0, timestamp=0,
+        self,
+        token,
+        tx_id,
+        kind,
+        principal_from,
+        principal_to,
+        amount,
+        fee=0,
+        timestamp=0,
     ):
         """Create a WalletTransfer entity."""
         if timestamp == 0:

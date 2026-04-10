@@ -57,7 +57,10 @@ def _local_canister_exec(code, canister, network):
     cmd.extend([canister, "execute_code_shell", f'("{escaped}")'])
     try:
         r = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=120,
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=120,
             cwd=_TEST_CANISTER_DIR,
         )
         if r.returncode != 0:
@@ -72,6 +75,7 @@ def _local_canister_exec(code, canister, network):
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
+
 
 def _get_canister():
     return os.environ.get("BASILISK_TEST_CANISTER", "shell_test")
@@ -89,7 +93,9 @@ def _get_ledger_id():
     try:
         result = subprocess.run(
             ["dfx", "canister", "id", "ckbtc_ledger"],
-            capture_output=True, text=True, check=True,
+            capture_output=True,
+            text=True,
+            check=True,
             cwd=os.path.join(os.path.dirname(__file__), "test_canister"),
         )
         return result.stdout.strip()
@@ -105,7 +111,9 @@ def _get_indexer_id():
     try:
         result = subprocess.run(
             ["dfx", "canister", "id", "ckbtc_indexer"],
-            capture_output=True, text=True, check=True,
+            capture_output=True,
+            text=True,
+            check=True,
             cwd=os.path.join(os.path.dirname(__file__), "test_canister"),
         )
         return result.stdout.strip()
@@ -208,6 +216,7 @@ _ICRC_RESOLVE = (
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture(scope="session")
 def wallet_canister():
     return _get_canister()
@@ -237,14 +246,19 @@ def indexer_id():
 @pytest.fixture(scope="session")
 def wallet_reachable(wallet_canister, wallet_network):
     """Verify canister is reachable and wallet entities are resolved."""
-    result = _local_canister_exec("print('wallet_ping')", wallet_canister, wallet_network)
+    result = _local_canister_exec(
+        "print('wallet_ping')", wallet_canister, wallet_network
+    )
     if "error" in result.lower():
         pytest.skip(f"Canister not reachable: {result}")
     assert result.strip() == "wallet_ping"
 
     # Resolve wallet entities
-    _local_canister_exec(_WALLET_RESOLVE + "print('wallet_entities_ready')",
-                         wallet_canister, wallet_network)
+    _local_canister_exec(
+        _WALLET_RESOLVE + "print('wallet_entities_ready')",
+        wallet_canister,
+        wallet_network,
+    )
     return True
 
 
@@ -257,15 +271,18 @@ def _exec(code, canister, network):
 # Helpers for async task-based tests
 # ---------------------------------------------------------------------------
 
+
 def _extract_task_id(output):
-    m = re.search(r'task\s+(\d+)', output, re.IGNORECASE)
+    m = re.search(r"task\s+(\d+)", output, re.IGNORECASE)
     return m.group(1) if m else None
 
 
 def _task_magic(cmd, canister, network):
     """Run a magic command via dfx from the test_canister dir."""
     result = _local_canister_exec(
-        _magic_to_code(cmd), canister, network,
+        _magic_to_code(cmd),
+        canister,
+        network,
     )
     return result.strip() if result else ""
 
@@ -277,9 +294,16 @@ def _magic_to_code(cmd):
     _task_info_code, _task_log_code, etc. take a single 'tid' string.
     """
     from ic_basilisk_toolkit.shell import (
-        _task_list_code, _task_create_code, _task_add_step_code, _task_info_code,
-        _task_start_code, _task_stop_code, _task_delete_code, _task_log_code,
+        _task_add_step_code,
+        _task_create_code,
+        _task_delete_code,
+        _task_info_code,
+        _task_list_code,
+        _task_log_code,
+        _task_start_code,
+        _task_stop_code,
     )
+
     # Strip leading %task and split into subcommand + rest
     stripped = cmd.strip()
     if stripped.startswith("%task"):
@@ -292,7 +316,7 @@ def _magic_to_code(cmd):
     if space_idx == -1:
         sub, rest = stripped, ""
     else:
-        sub, rest = stripped[:space_idx], stripped[space_idx + 1:]
+        sub, rest = stripped[:space_idx], stripped[space_idx + 1 :]
 
     if sub == "list":
         return _task_list_code()
@@ -333,28 +357,36 @@ def _wait_for_task_execution(tid, canister, network, timeout=60, poll=3):
 # Token Registry (synchronous entity tests)
 # ===========================================================================
 
+
 class TestTokenRegistry:
     """Test Token entity CRUD via exec_on_canister."""
 
     def test_register_token(self, wallet_reachable, wallet_canister, wallet_network):
         """Register a new token and verify it's persisted."""
         from ic_basilisk_toolkit.wallet import WELL_KNOWN_TOKENS
+
         ckbtc = WELL_KNOWN_TOKENS["ckBTC"]
         result = _exec(
             f"t = Token(name='test_ckBTC', ledger='{ckbtc['ledger']}', "
             f"indexer='{ckbtc['indexer']}', decimals={ckbtc['decimals']}, fee={ckbtc['fee']})\n"
             "print(f'{t.name}|{t.ledger}|{t.decimals}|{t.fee}')",
-            wallet_canister, wallet_network,
+            wallet_canister,
+            wallet_network,
         )
-        assert f"test_ckBTC|{ckbtc['ledger']}|{ckbtc['decimals']}|{ckbtc['fee']}" in result
+        assert (
+            f"test_ckBTC|{ckbtc['ledger']}|{ckbtc['decimals']}|{ckbtc['fee']}" in result
+        )
 
-    def test_get_token_by_alias(self, wallet_reachable, wallet_canister, wallet_network):
+    def test_get_token_by_alias(
+        self, wallet_reachable, wallet_canister, wallet_network
+    ):
         """Retrieve token by name alias."""
         from ic_basilisk_toolkit.wallet import WELL_KNOWN_TOKENS
+
         result = _exec(
-            "t = Token['test_ckBTC']\n"
-            "print(t.ledger if t else 'NOT_FOUND')",
-            wallet_canister, wallet_network,
+            "t = Token['test_ckBTC']\n" "print(t.ledger if t else 'NOT_FOUND')",
+            wallet_canister,
+            wallet_network,
         )
         assert WELL_KNOWN_TOKENS["ckBTC"]["ledger"] in result
 
@@ -365,19 +397,24 @@ class TestTokenRegistry:
             "t.fee = 20\n"
             "t2 = Token['test_ckBTC']\n"
             "print(t2.fee)",
-            wallet_canister, wallet_network,
+            wallet_canister,
+            wallet_network,
         )
         assert "20" in result
 
-    def test_register_second_token(self, wallet_reachable, wallet_canister, wallet_network):
+    def test_register_second_token(
+        self, wallet_reachable, wallet_canister, wallet_network
+    ):
         """Register a second token."""
         from ic_basilisk_toolkit.wallet import WELL_KNOWN_TOKENS
+
         cketh = WELL_KNOWN_TOKENS["ckETH"]
         result = _exec(
             f"t = Token(name='test_ckETH', ledger='{cketh['ledger']}', "
             f"indexer='', decimals={cketh['decimals']}, fee={cketh['fee']})\n"
             "print(f'{t.name}|{t.decimals}')",
-            wallet_canister, wallet_network,
+            wallet_canister,
+            wallet_network,
         )
         assert f"test_ckETH|{cketh['decimals']}" in result
 
@@ -386,7 +423,8 @@ class TestTokenRegistry:
         result = _exec(
             "names = sorted([t.name for t in Token.instances() if t.name.startswith('test_')])\n"
             "print('|'.join(names))",
-            wallet_canister, wallet_network,
+            wallet_canister,
+            wallet_network,
         )
         assert "test_ckBTC" in result
         assert "test_ckETH" in result
@@ -398,13 +436,15 @@ class TestTokenRegistry:
             "    if t.name.startswith('test_'):\n"
             "        t.delete()\n"
             "print('cleaned')",
-            wallet_canister, wallet_network,
+            wallet_canister,
+            wallet_network,
         )
 
 
 # ===========================================================================
 # WalletBalance entity (synchronous)
 # ===========================================================================
+
 
 class TestBalanceEntity:
     """Test WalletBalance entity CRUD."""
@@ -415,17 +455,21 @@ class TestBalanceEntity:
             "tok = Token(name='bal_test_token', ledger='aaa', indexer='', decimals=8, fee=10)\n"
             "bal = WalletBalance(principal='test-principal-123', token=tok, amount=50000)\n"
             "print(f'{bal.principal}|{bal.amount}')",
-            wallet_canister, wallet_network,
+            wallet_canister,
+            wallet_network,
         )
         assert "test-principal-123|50000" in result
 
-    def test_read_balance_via_token(self, wallet_reachable, wallet_canister, wallet_network):
+    def test_read_balance_via_token(
+        self, wallet_reachable, wallet_canister, wallet_network
+    ):
         """Read balance through the token relationship."""
         result = _exec(
             "tok = Token['bal_test_token']\n"
             "bals = list(tok.balances)\n"
             "print(f'{len(bals)}|{bals[0].amount if bals else 0}')",
-            wallet_canister, wallet_network,
+            wallet_canister,
+            wallet_network,
         )
         assert "1|50000" in result
 
@@ -439,7 +483,8 @@ class TestBalanceEntity:
             "        break\n"
             "b2 = list(Token['bal_test_token'].balances)[0]\n"
             "print(b2.amount)",
-            wallet_canister, wallet_network,
+            wallet_canister,
+            wallet_network,
         )
         assert "75000" in result
 
@@ -451,13 +496,15 @@ class TestBalanceEntity:
             "tok = Token['bal_test_token']\n"
             "if tok: tok.delete()\n"
             "print('cleaned')",
-            wallet_canister, wallet_network,
+            wallet_canister,
+            wallet_network,
         )
 
 
 # ===========================================================================
 # WalletTransfer entity (synchronous)
 # ===========================================================================
+
 
 class TestTransferEntity:
     """Test WalletTransfer entity CRUD."""
@@ -470,17 +517,21 @@ class TestTransferEntity:
             "    principal_from='from-xyz', principal_to='to-abc',\n"
             "    amount=1000, fee=10, timestamp=1234567890)\n"
             "print(f'{tx.tx_id}|{tx.kind}|{tx.amount}|{tx.fee}')",
-            wallet_canister, wallet_network,
+            wallet_canister,
+            wallet_network,
         )
         assert "42|transfer|1000|10" in result
 
-    def test_transfer_linked_to_token(self, wallet_reachable, wallet_canister, wallet_network):
+    def test_transfer_linked_to_token(
+        self, wallet_reachable, wallet_canister, wallet_network
+    ):
         """Verify transfer is linked to its token via ManyToOne."""
         result = _exec(
             "tok = Token['tx_test_token']\n"
             "txs = list(tok.transfers)\n"
             "print(f'{len(txs)}|{txs[0].tx_id if txs else \"\"}')",
-            wallet_canister, wallet_network,
+            wallet_canister,
+            wallet_network,
         )
         assert "1|42" in result
 
@@ -492,7 +543,8 @@ class TestTransferEntity:
             "tok = Token['tx_test_token']\n"
             "if tok: tok.delete()\n"
             "print('cleaned')",
-            wallet_canister, wallet_network,
+            wallet_canister,
+            wallet_network,
         )
 
 
@@ -500,9 +552,11 @@ class TestTransferEntity:
 # Helper: write async code to canister file, create task with --file
 # ===========================================================================
 
+
 def _write_file_on_canister(path, content, canister, network):
     """Write a Python file to the canister's in-memory filesystem."""
     import base64
+
     b64 = base64.b64encode(content.encode()).decode()
     result = _local_canister_exec(
         f"import base64\n"
@@ -510,7 +564,8 @@ def _write_file_on_canister(path, content, canister, network):
         f"with open('{path}', 'w') as f:\n"
         f"    f.write(_data)\n"
         f"print('wrote {path}')",
-        canister, network,
+        canister,
+        network,
     )
     assert "wrote" in result, f"Failed to write file: {result}"
 
@@ -522,19 +577,22 @@ def _run_async_task(name, code, canister, network, timeout=60):
 
     # Create a bare task (no code)
     result = _task_magic(
-        f'%task create {name}',
-        canister, network,
+        f"%task create {name}",
+        canister,
+        network,
     )
     tid = _extract_task_id(result)
     assert tid, f"Failed to create task: {result}"
 
     # Add an async step pointing to the file
     step_result = _task_magic(
-        f'%task add-step {tid} --async --file {path}',
-        canister, network,
+        f"%task add-step {tid} --async --file {path}",
+        canister,
+        network,
     )
-    assert "Added" in step_result or "step" in step_result.lower(), \
-        f"Failed to add step: {step_result}"
+    assert (
+        "Added" in step_result or "step" in step_result.lower()
+    ), f"Failed to add step: {step_result}"
 
     _task_magic(f"%task start {tid}", canister, network)
     info = _wait_for_task_execution(tid, canister, network, timeout=timeout)
@@ -545,7 +603,8 @@ def _run_async_task(name, code, canister, network, timeout=60):
     _cleanup_task(tid, canister, network)
     _local_canister_exec(
         f"import os; os.remove('{path}') if os.path.exists('{path}') else None",
-        canister, network,
+        canister,
+        network,
     )
     return log
 
@@ -554,11 +613,16 @@ def _run_async_task(name, code, canister, network, timeout=60):
 # ICRC Balance Query (async inter-canister call via %task)
 # ===========================================================================
 
+
 class TestICRCBalanceQuery:
     """Test querying balance from a real (local) ckBTC ledger canister."""
 
     def test_query_balance(
-        self, wallet_reachable, wallet_canister, wallet_network, ledger_id,
+        self,
+        wallet_reachable,
+        wallet_canister,
+        wallet_network,
+        ledger_id,
     ):
         """Query the canister's ckBTC balance from the local ledger."""
         code = (
@@ -584,19 +648,25 @@ class TestICRCBalanceQuery:
         )
 
         log = _run_async_task(
-            "_test_wallet_balance", code,
-            wallet_canister, wallet_network,
+            "_test_wallet_balance",
+            code,
+            wallet_canister,
+            wallet_network,
         )
         assert "completed" in log, f"Task did not complete: {log}"
 
-        m = re.search(r'WALLET_BALANCE:(\d+)', log)
+        m = re.search(r"WALLET_BALANCE:(\d+)", log)
         assert m, f"Balance not found in log: {log}"
         balance = int(m.group(1))
         assert balance > 0, f"Expected positive balance, got {balance}"
         print(f"\n  ckBTC balance: {balance} satoshis")
 
     def test_query_fee(
-        self, wallet_reachable, wallet_canister, wallet_network, ledger_id,
+        self,
+        wallet_reachable,
+        wallet_canister,
+        wallet_network,
+        ledger_id,
     ):
         """Query the ckBTC transfer fee from the local ledger."""
         code = (
@@ -620,12 +690,14 @@ class TestICRCBalanceQuery:
         )
 
         log = _run_async_task(
-            "_test_wallet_fee", code,
-            wallet_canister, wallet_network,
+            "_test_wallet_fee",
+            code,
+            wallet_canister,
+            wallet_network,
         )
         assert "completed" in log, f"Task did not complete: {log}"
 
-        m = re.search(r'WALLET_FEE:(\d+)', log)
+        m = re.search(r"WALLET_FEE:(\d+)", log)
         assert m, f"Fee not found in log: {log}"
         fee = int(m.group(1))
         assert fee == 10, f"Expected fee=10, got {fee}"
@@ -636,11 +708,16 @@ class TestICRCBalanceQuery:
 # ICRC Transfer (async inter-canister call)
 # ===========================================================================
 
+
 class TestICRCTransfer:
     """Test performing an actual ICRC-1 transfer from the canister."""
 
     def test_transfer_to_self(
-        self, wallet_reachable, wallet_canister, wallet_network, ledger_id,
+        self,
+        wallet_reachable,
+        wallet_canister,
+        wallet_network,
+        ledger_id,
     ):
         """Transfer tokens from the canister back to itself (round-trip test)."""
         code = (
@@ -698,19 +775,26 @@ class TestICRCTransfer:
         )
 
         log = _run_async_task(
-            "_test_wallet_transfer", code,
-            wallet_canister, wallet_network, timeout=60,
+            "_test_wallet_transfer",
+            code,
+            wallet_canister,
+            wallet_network,
+            timeout=60,
         )
         assert "completed" in log, f"Task did not complete: {log}"
 
-        m = re.search(r'WALLET_TX_OK:(\d+)', log)
+        m = re.search(r"WALLET_TX_OK:(\d+)", log)
         assert m, f"Transfer TX ID not found in log: {log}"
         tx_id = int(m.group(1))
         assert tx_id > 0, f"Expected positive TX ID, got {tx_id}"
         print(f"\n  Transfer TX ID: {tx_id}")
 
     def test_transfer_insufficient_funds(
-        self, wallet_reachable, wallet_canister, wallet_network, ledger_id,
+        self,
+        wallet_reachable,
+        wallet_canister,
+        wallet_network,
+        ledger_id,
     ):
         """Transfer more than available should return InsufficientFunds error."""
         code = (
@@ -768,13 +852,17 @@ class TestICRCTransfer:
         )
 
         log = _run_async_task(
-            "_test_wallet_insuff", code,
-            wallet_canister, wallet_network, timeout=60,
+            "_test_wallet_insuff",
+            code,
+            wallet_canister,
+            wallet_network,
+            timeout=60,
         )
         assert "completed" in log, f"Task did not complete: {log}"
 
-        assert "WALLET_TX_ERR:InsufficientFunds" in log, \
-            f"Expected InsufficientFunds error in log: {log}"
+        assert (
+            "WALLET_TX_ERR:InsufficientFunds" in log
+        ), f"Expected InsufficientFunds error in log: {log}"
         print("\n  Correctly got InsufficientFunds error")
 
 
@@ -782,12 +870,17 @@ class TestICRCTransfer:
 # ICRC Refresh from Indexer (async inter-canister call)
 # ===========================================================================
 
+
 class TestICRCRefresh:
     """Test syncing transaction history from the indexer canister."""
 
     def test_query_transactions(
-        self, wallet_reachable, wallet_canister, wallet_network,
-        ledger_id, indexer_id,
+        self,
+        wallet_reachable,
+        wallet_canister,
+        wallet_network,
+        ledger_id,
+        indexer_id,
     ):
         """Query transaction history from the local ckBTC indexer."""
         code = (
@@ -835,12 +928,15 @@ class TestICRCRefresh:
         )
 
         log = _run_async_task(
-            "_test_wallet_refresh", code,
-            wallet_canister, wallet_network, timeout=60,
+            "_test_wallet_refresh",
+            code,
+            wallet_canister,
+            wallet_network,
+            timeout=60,
         )
         assert "completed" in log, f"Task did not complete: {log}"
 
-        m = re.search(r'WALLET_REFRESH:balance=(\d+),txs=(\d+)', log)
+        m = re.search(r"WALLET_REFRESH:balance=(\d+),txs=(\d+)", log)
         assert m, f"Refresh data not found in log: {log}"
         balance = int(m.group(1))
         tx_count = int(m.group(2))

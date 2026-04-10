@@ -53,7 +53,10 @@ def _local_canister_exec(code, canister, network):
     cmd.extend([canister, "execute_code_shell", f'("{escaped}")'])
     try:
         r = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=120,
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=120,
             cwd=_TEST_CANISTER_DIR,
         )
         if r.returncode != 0:
@@ -68,6 +71,7 @@ def _local_canister_exec(code, canister, network):
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
+
 
 def _get_canister():
     return os.environ.get("BASILISK_TEST_CANISTER", "shell_test")
@@ -165,6 +169,7 @@ _XRC_RESOLVE = (
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture(scope="session")
 def fx_canister():
     return _get_canister()
@@ -186,7 +191,8 @@ def fx_reachable(fx_canister, fx_network):
     # Resolve FXPair entity
     _local_canister_exec(
         _FXPAIR_RESOLVE + "print('fxpair_ready')",
-        fx_canister, fx_network,
+        fx_canister,
+        fx_network,
     )
     return True
 
@@ -200,17 +206,25 @@ def _exec(code, canister, network):
 # Helpers for async task-based tests
 # ---------------------------------------------------------------------------
 
+
 def _extract_task_id(output):
-    m = re.search(r'task\s+(\d+)', output, re.IGNORECASE)
+    m = re.search(r"task\s+(\d+)", output, re.IGNORECASE)
     return m.group(1) if m else None
 
 
 def _magic_to_code(cmd):
     """Convert a %task magic command to executable Python code."""
     from ic_basilisk_toolkit.shell import (
-        _task_list_code, _task_create_code, _task_add_step_code, _task_info_code,
-        _task_start_code, _task_stop_code, _task_delete_code, _task_log_code,
+        _task_add_step_code,
+        _task_create_code,
+        _task_delete_code,
+        _task_info_code,
+        _task_list_code,
+        _task_log_code,
+        _task_start_code,
+        _task_stop_code,
     )
+
     stripped = cmd.strip()
     if stripped.startswith("%task"):
         stripped = stripped[5:].strip()
@@ -221,7 +235,7 @@ def _magic_to_code(cmd):
     if space_idx == -1:
         sub, rest = stripped, ""
     else:
-        sub, rest = stripped[:space_idx], stripped[space_idx + 1:]
+        sub, rest = stripped[:space_idx], stripped[space_idx + 1 :]
 
     if sub == "list":
         return _task_list_code()
@@ -241,6 +255,7 @@ def _magic_to_code(cmd):
         return _task_delete_code(rest.strip())
     elif sub == "run":
         from ic_basilisk_toolkit.shell import _task_run_code
+
         return _task_run_code(rest.strip())
     else:
         raise ValueError(f"Unknown %task subcommand: {sub}")
@@ -249,7 +264,9 @@ def _magic_to_code(cmd):
 def _task_magic(cmd, canister, network):
     """Run a magic command via dfx from the test_canister dir."""
     result = _local_canister_exec(
-        _magic_to_code(cmd), canister, network,
+        _magic_to_code(cmd),
+        canister,
+        network,
     )
     return result.strip() if result else ""
 
@@ -272,6 +289,7 @@ def _wait_for_task_execution(tid, canister, network, timeout=120, poll=5):
 def _write_file_on_canister(path, content, canister, network):
     """Write a Python file to the canister's in-memory filesystem."""
     import base64
+
     b64 = base64.b64encode(content.encode()).decode()
     result = _local_canister_exec(
         f"import base64\n"
@@ -279,7 +297,8 @@ def _write_file_on_canister(path, content, canister, network):
         f"with open('{path}', 'w') as f:\n"
         f"    f.write(_data)\n"
         f"print('wrote {path}')",
-        canister, network,
+        canister,
+        network,
     )
     assert "wrote" in result, f"Failed to write file: {result}"
 
@@ -291,19 +310,22 @@ def _run_async_task(name, code, canister, network, timeout=120):
 
     # Create a bare task (no code)
     result = _task_magic(
-        f'%task create {name}',
-        canister, network,
+        f"%task create {name}",
+        canister,
+        network,
     )
     tid = _extract_task_id(result)
     assert tid, f"Failed to create task: {result}"
 
     # Add an async step pointing to the file
     step_result = _task_magic(
-        f'%task add-step {tid} --async --file {path}',
-        canister, network,
+        f"%task add-step {tid} --async --file {path}",
+        canister,
+        network,
     )
-    assert "Added" in step_result or "step" in step_result.lower(), \
-        f"Failed to add step: {step_result}"
+    assert (
+        "Added" in step_result or "step" in step_result.lower()
+    ), f"Failed to add step: {step_result}"
 
     _task_magic(f"%task start {tid}", canister, network)
     log = _wait_for_task_execution(tid, canister, network, timeout=timeout)
@@ -312,7 +334,8 @@ def _run_async_task(name, code, canister, network, timeout=120):
     _cleanup_task(tid, canister, network)
     _local_canister_exec(
         f"import os; os.remove('{path}') if os.path.exists('{path}') else None",
-        canister, network,
+        canister,
+        network,
     )
     return log
 
@@ -320,6 +343,7 @@ def _run_async_task(name, code, canister, network, timeout=120):
 # ===========================================================================
 # 1. FXPair Entity CRUD (synchronous)
 # ===========================================================================
+
 
 class TestFXPairEntity:
     """Test FXPair entity CRUD via exec on canister."""
@@ -331,16 +355,17 @@ class TestFXPairEntity:
             "base_class='Cryptocurrency', quote_symbol='USD', "
             "quote_class='FiatCurrency')\n"
             "print(f'{p.name}|{p.base_symbol}|{p.base_class}|{p.quote_symbol}|{p.quote_class}')",
-            fx_canister, fx_network,
+            fx_canister,
+            fx_network,
         )
         assert "TEST_BTC/USD|BTC|Cryptocurrency|USD|FiatCurrency" in result
 
     def test_get_fxpair_by_alias(self, fx_reachable, fx_canister, fx_network):
         """Retrieve FXPair by name alias."""
         result = _exec(
-            "p = FXPair['TEST_BTC/USD']\n"
-            "print(p.base_symbol if p else 'NOT_FOUND')",
-            fx_canister, fx_network,
+            "p = FXPair['TEST_BTC/USD']\n" "print(p.base_symbol if p else 'NOT_FOUND')",
+            fx_canister,
+            fx_network,
         )
         assert "BTC" in result
 
@@ -349,7 +374,8 @@ class TestFXPairEntity:
         result = _exec(
             "p = FXPair['TEST_BTC/USD']\n"
             "print(f'{p.rate}|{p.decimals}|{p.last_updated}|{repr(p.last_error)}')",
-            fx_canister, fx_network,
+            fx_canister,
+            fx_network,
         )
         assert "0|9|0|" in result
 
@@ -362,7 +388,8 @@ class TestFXPairEntity:
             "p.last_updated = 1700000000\n"
             "p2 = FXPair['TEST_BTC/USD']\n"
             "print(f'{p2.rate}|{p2.decimals}|{p2.last_updated}')",
-            fx_canister, fx_network,
+            fx_canister,
+            fx_network,
         )
         assert "67000000000000|9|1700000000" in result
 
@@ -373,7 +400,8 @@ class TestFXPairEntity:
             "p.last_error = 'RateLimited'\n"
             "p2 = FXPair['TEST_BTC/USD']\n"
             "print(p2.last_error)",
-            fx_canister, fx_network,
+            fx_canister,
+            fx_network,
         )
         assert "RateLimited" in result
 
@@ -384,7 +412,8 @@ class TestFXPairEntity:
             "base_class='Cryptocurrency', quote_symbol='USD', "
             "quote_class='FiatCurrency')\n"
             "print(f'{p.name}|{p.base_symbol}')",
-            fx_canister, fx_network,
+            fx_canister,
+            fx_network,
         )
         assert "TEST_ICP/USD|ICP" in result
 
@@ -395,7 +424,8 @@ class TestFXPairEntity:
             "base_class='FiatCurrency', quote_symbol='USD', "
             "quote_class='FiatCurrency')\n"
             "print(f'{p.name}|{p.base_class}|{p.quote_class}')",
-            fx_canister, fx_network,
+            fx_canister,
+            fx_network,
         )
         assert "TEST_EUR/USD|FiatCurrency|FiatCurrency" in result
 
@@ -404,7 +434,8 @@ class TestFXPairEntity:
         result = _exec(
             "names = sorted([p.name for p in FXPair.instances() if p.name.startswith('TEST_')])\n"
             "print('|'.join(names))",
-            fx_canister, fx_network,
+            fx_canister,
+            fx_network,
         )
         assert "TEST_BTC/USD" in result
         assert "TEST_ICP/USD" in result
@@ -415,7 +446,8 @@ class TestFXPairEntity:
         result = _exec(
             "c = len([p for p in FXPair.instances() if p.name.startswith('TEST_')])\n"
             "print(c)",
-            fx_canister, fx_network,
+            fx_canister,
+            fx_network,
         )
         assert int(result) >= 3
 
@@ -426,7 +458,8 @@ class TestFXPairEntity:
             "if p: p.delete()\n"
             "p2 = FXPair['TEST_EUR/USD']\n"
             "print('GONE' if p2 is None else 'STILL_HERE')",
-            fx_canister, fx_network,
+            fx_canister,
+            fx_network,
         )
         assert "GONE" in result
 
@@ -437,7 +470,8 @@ class TestFXPairEntity:
             "    if p.name.startswith('TEST_'):\n"
             "        p.delete()\n"
             "print('cleaned')",
-            fx_canister, fx_network,
+            fx_canister,
+            fx_network,
         )
 
 
@@ -448,8 +482,7 @@ class TestFXPairEntity:
 # FXService preamble — resolves the FXPair entity + a lightweight FXService
 # that works without basilisk.canisters.xrc import (sync-only methods).
 _FXSERVICE_RESOLVE = (
-    _FXPAIR_RESOLVE +
-    "if 'FXService' not in dir():\n"
+    _FXPAIR_RESOLVE + "if 'FXService' not in dir():\n"
     "    class FXService:\n"
     "        def register_pair(self, base_symbol, quote_symbol, base_class='Cryptocurrency', quote_class='FiatCurrency'):\n"
     "            name = f'{base_symbol}/{quote_symbol}'\n"
@@ -502,7 +535,8 @@ class TestFXServiceRegistry:
             "fx = FXService()\n"
             "p = fx.register_pair('BTC', 'USD')\n"
             "print(f'{p.name}|{p.base_symbol}|{p.quote_symbol}')",
-            fx_canister, fx_network,
+            fx_canister,
+            fx_network,
         )
         assert "BTC/USD|BTC|USD" in result
 
@@ -514,7 +548,8 @@ class TestFXServiceRegistry:
             "p2 = fx.register_pair('BTC', 'USD')\n"
             "count = len([p for p in FXPair.instances() if p.name == 'BTC/USD'])\n"
             "print(f'count={count}')",
-            fx_canister, fx_network,
+            fx_canister,
+            fx_network,
         )
         assert "count=1" in result
 
@@ -526,7 +561,8 @@ class TestFXServiceRegistry:
             "fx.register_pair('ETH', 'USD')\n"
             "names = sorted([p.name for p in FXPair.instances() if p.name.endswith('/USD')])\n"
             "print('|'.join(names))",
-            fx_canister, fx_network,
+            fx_canister,
+            fx_network,
         )
         assert "BTC/USD" in result
         assert "ETH/USD" in result
@@ -538,17 +574,21 @@ class TestFXServiceRegistry:
             "fx = FXService()\n"
             "p = fx.register_pair('EUR', 'USD', base_class='FiatCurrency')\n"
             "print(f'{p.name}|{p.base_class}|{p.quote_class}')",
-            fx_canister, fx_network,
+            fx_canister,
+            fx_network,
         )
         assert "EUR/USD|FiatCurrency|FiatCurrency" in result
 
-    def test_register_crypto_to_crypto_pair(self, fx_reachable, fx_canister, fx_network):
+    def test_register_crypto_to_crypto_pair(
+        self, fx_reachable, fx_canister, fx_network
+    ):
         """Register a crypto-to-crypto pair."""
         result = _exec_fx(
             "fx = FXService()\n"
             "p = fx.register_pair('BTC', 'ETH', quote_class='Cryptocurrency')\n"
             "print(f'{p.name}|{p.base_class}|{p.quote_class}')",
-            fx_canister, fx_network,
+            fx_canister,
+            fx_network,
         )
         assert "BTC/ETH|Cryptocurrency|Cryptocurrency" in result
 
@@ -558,7 +598,8 @@ class TestFXServiceRegistry:
             "fx = FXService()\n"
             "p = fx.get_pair('BTC', 'USD')\n"
             "print(p.name if p else 'NOT_FOUND')",
-            fx_canister, fx_network,
+            fx_canister,
+            fx_network,
         )
         assert "BTC/USD" in result
 
@@ -568,7 +609,8 @@ class TestFXServiceRegistry:
             "fx = FXService()\n"
             "p = fx.get_pair('DOGE', 'USD')\n"
             "print('NONE' if p is None else p.name)",
-            fx_canister, fx_network,
+            fx_canister,
+            fx_network,
         )
         assert "NONE" in result
 
@@ -580,7 +622,8 @@ class TestFXServiceRegistry:
             "for p in sorted(pairs, key=lambda x: x['name']):\n"
             "    print(f\"{p['name']}|{p['rate']}\")\n"
             "print(f'total={len(pairs)}')",
-            fx_canister, fx_network,
+            fx_canister,
+            fx_network,
         )
         assert "BTC/USD" in result
         assert "total=" in result
@@ -592,7 +635,8 @@ class TestFXServiceRegistry:
             "removed = fx.unregister_pair('BTC', 'ETH')\n"
             "p = fx.get_pair('BTC', 'ETH')\n"
             "print(f'removed={removed}|exists={p is not None}')",
-            fx_canister, fx_network,
+            fx_canister,
+            fx_network,
         )
         assert "removed=True|exists=False" in result
 
@@ -602,7 +646,8 @@ class TestFXServiceRegistry:
             "fx = FXService()\n"
             "removed = fx.unregister_pair('DOGE', 'USD')\n"
             "print(f'removed={removed}')",
-            fx_canister, fx_network,
+            fx_canister,
+            fx_network,
         )
         assert "removed=False" in result
 
@@ -610,6 +655,7 @@ class TestFXServiceRegistry:
 # ===========================================================================
 # 3. FXService — synchronous rate queries
 # ===========================================================================
+
 
 class TestFXServiceRateQueries:
     """Test synchronous rate queries (from DB, no inter-canister call)."""
@@ -622,7 +668,8 @@ class TestFXServiceRateQueries:
             "if p: p.rate = 0\n"
             "rate = fx.get_rate('BTC', 'USD')\n"
             "print('NONE' if rate is None else rate)",
-            fx_canister, fx_network,
+            fx_canister,
+            fx_network,
         )
         assert "NONE" in result
 
@@ -635,7 +682,8 @@ class TestFXServiceRateQueries:
             "fx = FXService()\n"
             "rate = fx.get_rate('BTC', 'USD')\n"
             "print(f'rate={rate}')",
-            fx_canister, fx_network,
+            fx_canister,
+            fx_network,
         )
         assert "rate=67000.0" in result
 
@@ -645,7 +693,8 @@ class TestFXServiceRateQueries:
             "fx = FXService()\n"
             "rate = fx.get_rate('DOGE', 'USD')\n"
             "print('NONE' if rate is None else rate)",
-            fx_canister, fx_network,
+            fx_canister,
+            fx_network,
         )
         assert "NONE" in result
 
@@ -660,7 +709,8 @@ class TestFXServiceRateQueries:
             "fx = FXService()\n"
             "info = fx.get_rate_info('BTC', 'USD')\n"
             "print(f\"{info['pair']}|{info['rate']}|{info['raw_rate']}|{info['decimals']}|{info['last_updated']}\")",
-            fx_canister, fx_network,
+            fx_canister,
+            fx_network,
         )
         assert "BTC/USD|67000.0|67000000000000|9|1700000000" in result
 
@@ -670,7 +720,8 @@ class TestFXServiceRateQueries:
             "fx = FXService()\n"
             "info = fx.get_rate_info('DOGE', 'USD')\n"
             "print('NONE' if info is None else 'FOUND')",
-            fx_canister, fx_network,
+            fx_canister,
+            fx_network,
         )
         assert "NONE" in result
 
@@ -682,7 +733,8 @@ class TestFXServiceRateQueries:
             "fx = FXService()\n"
             "info = fx.get_rate_info('BTC', 'USD')\n"
             "print(f\"error={info['last_error']}\")",
-            fx_canister, fx_network,
+            fx_canister,
+            fx_network,
         )
         assert "error=RateLimited" in result
 
@@ -695,13 +747,15 @@ class TestFXServiceRateQueries:
             "    p.last_updated = 0\n"
             "    p.last_error = ''\n"
             "print('reset')",
-            fx_canister, fx_network,
+            fx_canister,
+            fx_network,
         )
 
 
 # ===========================================================================
 # 4. XRC Canister Binding — async inter-canister call
 # ===========================================================================
+
 
 class TestXRCCanisterBinding:
     """Test calling the real XRC canister from the test canister."""
@@ -795,12 +849,15 @@ class TestXRCCanisterBinding:
             "        return f'FX_RAW:{raw}'\n"
         )
         log = _run_async_task(
-            "_test_xrc_btc_usd", code,
-            fx_canister, fx_network, timeout=90,
+            "_test_xrc_btc_usd",
+            code,
+            fx_canister,
+            fx_network,
+            timeout=90,
         )
         assert "completed" in log, f"Task did not complete: {log}"
 
-        m = re.search(r'FX_RATE:BTC/USD=([0-9.]+)\|raw=(\d+)\|dec=(\d+)', log)
+        m = re.search(r"FX_RATE:BTC/USD=([0-9.]+)\|raw=(\d+)\|dec=(\d+)", log)
         if m:
             human_rate = float(m.group(1))
             raw_rate = int(m.group(2))
@@ -812,8 +869,7 @@ class TestXRCCanisterBinding:
             print(f"\n  BTC/USD = {human_rate} (raw={raw_rate}, dec={decimals})")
         else:
             # May get RateLimited or other expected errors — don't fail hard
-            assert "FX_ERR:" in log or "FX_RAW:" in log, \
-                f"Unexpected response: {log}"
+            assert "FX_ERR:" in log or "FX_RAW:" in log, f"Unexpected response: {log}"
             print(f"\n  XRC response (non-Ok): {log}")
 
     def test_query_icp_usd(self, fx_reachable, fx_canister, fx_network):
@@ -905,20 +961,22 @@ class TestXRCCanisterBinding:
             "        return f'FX_RAW:{raw}'\n"
         )
         log = _run_async_task(
-            "_test_xrc_icp_usd", code,
-            fx_canister, fx_network, timeout=90,
+            "_test_xrc_icp_usd",
+            code,
+            fx_canister,
+            fx_network,
+            timeout=90,
         )
         assert "completed" in log, f"Task did not complete: {log}"
 
-        m = re.search(r'FX_RATE:ICP/USD=([0-9.]+)', log)
+        m = re.search(r"FX_RATE:ICP/USD=([0-9.]+)", log)
         if m:
             human_rate = float(m.group(1))
             # ICP should be > $0.10
             assert human_rate > 0.10, f"ICP/USD rate suspiciously low: {human_rate}"
             print(f"\n  ICP/USD = {human_rate}")
         else:
-            assert "FX_ERR:" in log or "FX_RAW:" in log, \
-                f"Unexpected response: {log}"
+            assert "FX_ERR:" in log or "FX_RAW:" in log, f"Unexpected response: {log}"
             print(f"\n  XRC response (non-Ok): {log}")
 
     def test_query_invalid_asset(self, fx_reachable, fx_canister, fx_network):
@@ -1006,19 +1064,24 @@ class TestXRCCanisterBinding:
             "        return f'FX_RAW:{raw}'\n"
         )
         log = _run_async_task(
-            "_test_xrc_invalid", code,
-            fx_canister, fx_network, timeout=90,
+            "_test_xrc_invalid",
+            code,
+            fx_canister,
+            fx_network,
+            timeout=90,
         )
         assert "completed" in log, f"Task did not complete: {log}"
         # Should get CryptoBaseAssetNotFound or similar error
-        assert "FX_EXPECTED_ERR:" in log or "FX_RAW:" in log, \
-            f"Expected error for invalid asset: {log}"
+        assert (
+            "FX_EXPECTED_ERR:" in log or "FX_RAW:" in log
+        ), f"Expected error for invalid asset: {log}"
         print(f"\n  Invalid asset response: {log}")
 
 
 # ===========================================================================
 # 5. FXService.refresh — async, stores results in DB
 # ===========================================================================
+
 
 class TestFXServiceRefresh:
     """Test FXService.refresh() writing rates to the DB via async XRC calls."""
@@ -1035,7 +1098,8 @@ class TestFXServiceRefresh:
             "    p.rate = 0\n"
             "    p.last_updated = 0\n"
             "print('pairs_ready')",
-            fx_canister, fx_network,
+            fx_canister,
+            fx_network,
         )
 
         # The refresh async code — loop over registered pairs, query XRC, update DB
@@ -1156,8 +1220,11 @@ class TestFXServiceRefresh:
         )
 
         log = _run_async_task(
-            "_test_fx_refresh", code,
-            fx_canister, fx_network, timeout=180,
+            "_test_fx_refresh",
+            code,
+            fx_canister,
+            fx_network,
+            timeout=180,
         )
         assert "completed" in log, f"Task did not complete: {log}"
         assert "FX_REFRESH:" in log, f"Refresh summary not found: {log}"
@@ -1174,7 +1241,8 @@ class TestFXServiceRefresh:
             "print(f'btc_ok={btc_ok}|icp_ok={icp_ok}')\n"
             "if btc: print(f\"btc_rate={btc['rate']}|btc_updated={btc['last_updated']}|btc_err={btc['last_error']}\")\n"
             "if icp: print(f\"icp_rate={icp['rate']}|icp_updated={icp['last_updated']}|icp_err={icp['last_error']}\")",
-            fx_canister, fx_network,
+            fx_canister,
+            fx_network,
         )
         assert "btc_ok=True" in result
         assert "icp_ok=True" in result
@@ -1186,11 +1254,12 @@ class TestFXServiceRefresh:
             "btc = FXPair['BTC/USD']\n"
             "icp = FXPair['ICP/USD']\n"
             "print(f'btc_updated={btc.last_updated}|icp_updated={icp.last_updated}')",
-            fx_canister, fx_network,
+            fx_canister,
+            fx_network,
         )
         # After the refresh in the previous test, last_updated should be > 0
-        m_btc = re.search(r'btc_updated=(\d+)', result)
-        m_icp = re.search(r'icp_updated=(\d+)', result)
+        m_btc = re.search(r"btc_updated=(\d+)", result)
+        m_icp = re.search(r"icp_updated=(\d+)", result)
         assert m_btc and int(m_btc.group(1)) > 0, f"BTC last_updated not set: {result}"
         assert m_icp and int(m_icp.group(1)) > 0, f"ICP last_updated not set: {result}"
 
@@ -1198,6 +1267,7 @@ class TestFXServiceRefresh:
 # ===========================================================================
 # 6. FXService.fetch_rate — async single pair
 # ===========================================================================
+
 
 class TestFXServiceFetchRate:
     """Test FXService.fetch_rate() for a single pair."""
@@ -1212,7 +1282,8 @@ class TestFXServiceFetchRate:
             "p.rate = 0\n"
             "p.last_updated = 0\n"
             "print('ready')",
-            fx_canister, fx_network,
+            fx_canister,
+            fx_network,
         )
 
         code = (
@@ -1329,20 +1400,24 @@ class TestFXServiceFetchRate:
         )
 
         log = _run_async_task(
-            "_test_fx_fetch_eth", code,
-            fx_canister, fx_network, timeout=90,
+            "_test_fx_fetch_eth",
+            code,
+            fx_canister,
+            fx_network,
+            timeout=90,
         )
         assert "completed" in log, f"Task did not complete: {log}"
 
-        m = re.search(r'FX_FETCH:ETH/USD=([0-9.]+)', log)
+        m = re.search(r"FX_FETCH:ETH/USD=([0-9.]+)", log)
         if m:
             human_rate = float(m.group(1))
             # ETH should be > $100
             assert human_rate > 100, f"ETH/USD rate suspiciously low: {human_rate}"
             print(f"\n  ETH/USD = {human_rate}")
         else:
-            assert "FX_FETCH_ERR:" in log or "FX_FETCH_RAW:" in log, \
-                f"Unexpected response: {log}"
+            assert (
+                "FX_FETCH_ERR:" in log or "FX_FETCH_RAW:" in log
+            ), f"Unexpected response: {log}"
             print(f"\n  ETH/USD fetch response: {log}")
 
     def test_fetch_persisted(self, fx_reachable, fx_canister, fx_network):
@@ -1354,17 +1429,19 @@ class TestFXServiceFetchRate:
             "    print(f\"rate={info['rate']}|updated={info['last_updated']}|err={info['last_error']}\")\n"
             "else:\n"
             "    print('NOT_FOUND')",
-            fx_canister, fx_network,
+            fx_canister,
+            fx_network,
         )
         assert "rate=" in result
         # last_updated should have been set
-        m = re.search(r'updated=(\d+)', result)
+        m = re.search(r"updated=(\d+)", result)
         assert m and int(m.group(1)) > 0, f"ETH/USD not updated in DB: {result}"
 
 
 # ===========================================================================
 # 7. Cleanup
 # ===========================================================================
+
 
 class TestFXCleanup:
     """Cleanup FX pairs before CLI tests."""
@@ -1377,10 +1454,11 @@ class TestFXCleanup:
             "    p.delete()\n"
             "    deleted += 1\n"
             "print(f'deleted={deleted}')",
-            fx_canister, fx_network,
+            fx_canister,
+            fx_network,
         )
         assert "deleted=" in result
-        count = int(re.search(r'deleted=(\d+)', result).group(1))
+        count = int(re.search(r"deleted=(\d+)", result).group(1))
         assert count >= 0
         print(f"\n  Cleaned up {count} FX pairs")
 
@@ -1389,12 +1467,19 @@ class TestFXCleanup:
 # 8. %fx CLI magic commands
 # ===========================================================================
 
+
 def _fx_magic(cmd, canister, network):
     """Run a %fx magic command via generated code on the canister."""
     from ic_basilisk_toolkit.shell import (
-        _fx_list_code, _fx_register_code, _fx_unregister_code,
-        _fx_rate_code, _fx_info_code, _CRYPTO_SYMBOLS, _FIAT_SYMBOLS,
+        _CRYPTO_SYMBOLS,
+        _FIAT_SYMBOLS,
+        _fx_info_code,
+        _fx_list_code,
+        _fx_rate_code,
+        _fx_register_code,
+        _fx_unregister_code,
     )
+
     stripped = cmd.strip()
     if stripped.startswith("%fx"):
         stripped = stripped[3:].strip()
@@ -1462,10 +1547,9 @@ class TestFXCLI:
     def test_fx_rate_with_data(self, fx_reachable, fx_canister, fx_network):
         """'%fx rate' after manually setting rate shows the value."""
         _exec(
-            "p = FXPair['BTC/USD']\n"
-            "p.rate = 67000_000_000_000\n"
-            "p.decimals = 9\n",
-            fx_canister, fx_network,
+            "p = FXPair['BTC/USD']\n" "p.rate = 67000_000_000_000\n" "p.decimals = 9\n",
+            fx_canister,
+            fx_network,
         )
         result = _fx_magic("%fx rate BTC USD", fx_canister, fx_network)
         assert "67,000" in result or "67000" in result
@@ -1500,5 +1584,6 @@ class TestFXCLI:
             "for p in list(FXPair.instances()):\n"
             "    p.delete()\n"
             "print('cleaned')",
-            fx_canister, fx_network,
+            fx_canister,
+            fx_network,
         )

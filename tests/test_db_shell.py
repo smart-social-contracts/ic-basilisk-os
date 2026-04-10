@@ -20,24 +20,24 @@ import pytest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from ic_basilisk_toolkit.shell import (
-    _handle_db,
-    _handle_magic,
-    _db_types_code,
-    _db_list_code,
-    _db_show_code,
-    _db_search_code,
+    _DB_USAGE,
+    _db_delete_code,
     _db_export_code,
     _db_import_code,
-    _db_delete_code,
-    _DB_USAGE,
+    _db_list_code,
+    _db_search_code,
+    _db_show_code,
+    _db_types_code,
+    _handle_db,
+    _handle_magic,
     canister_exec,
 )
 from tests.conftest import exec_on_canister, magic_on_canister
 
-
 # ===========================================================================
 # Pure unit tests — no canister needed
 # ===========================================================================
+
 
 class TestDbCodeGeneration:
     """Test that code generation functions produce valid Python strings."""
@@ -77,7 +77,9 @@ class TestDbCodeGeneration:
         compile(code, "<test>", "exec")
 
     def test_import_code_is_valid_python(self):
-        payload = base64.b64encode(json.dumps([{"_type": "User", "_id": "1", "name": "Test"}]).encode()).decode()
+        payload = base64.b64encode(
+            json.dumps([{"_type": "User", "_id": "1", "name": "Test"}]).encode()
+        ).decode()
         code = _db_import_code(payload)
         assert "Entity.deserialize" in code
         assert "_context.clear()" in code
@@ -185,13 +187,25 @@ class TestDbUsageMessage:
     """Verify _DB_USAGE content."""
 
     def test_contains_all_subcommands(self):
-        for subcmd in ["types", "list", "show", "search", "export", "import", "delete", "count", "dump", "clear"]:
+        for subcmd in [
+            "types",
+            "list",
+            "show",
+            "search",
+            "export",
+            "import",
+            "delete",
+            "count",
+            "dump",
+            "clear",
+        ]:
             assert subcmd in _DB_USAGE, f"Missing subcommand: {subcmd}"
 
 
 # ===========================================================================
 # Integration tests — require a live canister
 # ===========================================================================
+
 
 @pytest.fixture(scope="module")
 def _ensure_canister(canister_reachable):
@@ -289,9 +303,9 @@ class TestDbCreateShowDeleteLifecycle:
         """Create a task, show it, then delete it."""
         # Create a task via direct code exec
         from ic_basilisk_toolkit.shell import _TASK_RESOLVE
+
         create_result = exec_on_canister(
-            _TASK_RESOLVE +
-            "_t = Task(name='db_test_entity_xyz')\n"
+            _TASK_RESOLVE + "_t = Task(name='db_test_entity_xyz')\n"
             "print(f'CREATED:{_t._id}')\n"
         )
         assert "CREATED:" in create_result
@@ -340,9 +354,9 @@ class TestDbExportImport:
         """Export Task entities to stdout (JSON array)."""
         # Create a task to export
         from ic_basilisk_toolkit.shell import _TASK_RESOLVE
+
         create_result = exec_on_canister(
-            _TASK_RESOLVE +
-            "_t = Task(name='export_test_xyz')\n"
+            _TASK_RESOLVE + "_t = Task(name='export_test_xyz')\n"
             "print(f'CREATED:{_t._id}')\n"
         )
         task_id = create_result.strip().split("CREATED:")[1].strip()
@@ -362,9 +376,9 @@ class TestDbExportImport:
     def test_export_to_file(self, canister, network):
         """Export Task entities to a local file."""
         from ic_basilisk_toolkit.shell import _TASK_RESOLVE
+
         create_result = exec_on_canister(
-            _TASK_RESOLVE +
-            "_t = Task(name='export_file_test_xyz')\n"
+            _TASK_RESOLVE + "_t = Task(name='export_file_test_xyz')\n"
             "print(f'CREATED:{_t._id}')\n"
         )
         task_id = create_result.strip().split("CREATED:")[1].strip()
@@ -395,8 +409,7 @@ class TestDbExportImport:
 
         # Create entity
         create_result = exec_on_canister(
-            _TASK_RESOLVE +
-            "_t = Task(name='roundtrip_test_xyz')\n"
+            _TASK_RESOLVE + "_t = Task(name='roundtrip_test_xyz')\n"
             "print(f'CREATED:{_t._id}')\n"
         )
         task_id = create_result.strip().split("CREATED:")[1].strip()
@@ -471,10 +484,15 @@ class TestDbOneShot:
     def test_oneshot_db_types(self, canister, network):
         """Run %db types via one-shot mode."""
         cmd = [
-            sys.executable, "-m", "basilisk.shell",
-            "--canister", canister,
-            "--network", network,
-            "-c", "%db types",
+            sys.executable,
+            "-m",
+            "basilisk.shell",
+            "--canister",
+            canister,
+            "--network",
+            network,
+            "-c",
+            "%db types",
         ]
         r = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
         assert r.returncode == 0
@@ -484,10 +502,15 @@ class TestDbOneShot:
     def test_oneshot_db_count(self, canister, network):
         """Run %db count via one-shot mode."""
         cmd = [
-            sys.executable, "-m", "basilisk.shell",
-            "--canister", canister,
-            "--network", network,
-            "-c", "%db count",
+            sys.executable,
+            "-m",
+            "basilisk.shell",
+            "--canister",
+            canister,
+            "--network",
+            network,
+            "-c",
+            "%db count",
         ]
         r = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
         assert r.returncode == 0
@@ -497,10 +520,15 @@ class TestDbOneShot:
     def test_oneshot_db_help(self, canister, network):
         """Run %db help via one-shot mode."""
         cmd = [
-            sys.executable, "-m", "basilisk.shell",
-            "--canister", canister,
-            "--network", network,
-            "-c", "%db help",
+            sys.executable,
+            "-m",
+            "basilisk.shell",
+            "--canister",
+            canister,
+            "--network",
+            network,
+            "-c",
+            "%db help",
         ]
         r = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
         assert r.returncode == 0

@@ -11,7 +11,7 @@ import stat as stat_module
 import time
 
 import asyncssh
-from asyncssh.sftp import SFTPAttrs, SFTPName, SFTPError
+from asyncssh.sftp import SFTPAttrs, SFTPError, SFTPName
 
 from .shell import canister_exec
 
@@ -59,7 +59,7 @@ except Exception as _e:
         result = self._exec(full_code)
         for line in result.split("\n"):
             if line.startswith(_MARKER):
-                data = json.loads(line[len(_MARKER):])
+                data = json.loads(line[len(_MARKER) :])
                 if "error" in data:
                     _raise_sftp_error(data["error"], data.get("msg", ""))
                 return data
@@ -104,7 +104,12 @@ print('{_MARKER}' + _j.dumps({{"entries": _entries}}))
                 permissions=e.get("mode", 0o100644),
                 mtime=e.get("mtime", 0),
             )
-            result.append(SFTPName(e["name"].encode() if isinstance(e["name"], str) else e["name"], attrs=attrs))
+            result.append(
+                SFTPName(
+                    e["name"].encode() if isinstance(e["name"], str) else e["name"],
+                    attrs=attrs,
+                )
+            )
         return result
 
     def open(self, path, pflags, attrs):
@@ -112,7 +117,15 @@ print('{_MARKER}' + _j.dumps({{"entries": _entries}}))
         handle = self._new_handle()
 
         is_read = bool(pflags & asyncssh.FXF_READ)
-        is_write = bool(pflags & (asyncssh.FXF_WRITE | asyncssh.FXF_CREAT | asyncssh.FXF_TRUNC | asyncssh.FXF_APPEND))
+        is_write = bool(
+            pflags
+            & (
+                asyncssh.FXF_WRITE
+                | asyncssh.FXF_CREAT
+                | asyncssh.FXF_TRUNC
+                | asyncssh.FXF_APPEND
+            )
+        )
 
         file_data = b""
         if is_read:
@@ -204,6 +217,7 @@ print('{_MARKER}' + _j.dumps({{"ok": True}}))
 
 
 # -- utility functions --
+
 
 def _norm(path):
     """Normalize path to absolute POSIX."""

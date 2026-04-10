@@ -34,6 +34,7 @@ logger = get_logger("basilisk.os.entities")
 # Codex — executable code stored on the persistent filesystem
 # ---------------------------------------------------------------------------
 
+
 class Codex(Entity, TimestampedMixin):
     """
     Stores executable Python code on the canister's persistent filesystem.
@@ -55,7 +56,7 @@ class Codex(Entity, TimestampedMixin):
     def code(self):
         """Read codex content from the persistent filesystem."""
         # Return pending code if name hasn't been set yet
-        pending = getattr(self, '_pending_code', None)
+        pending = getattr(self, "_pending_code", None)
         if pending is not None:
             return pending
         if self.name:
@@ -75,9 +76,11 @@ class Codex(Entity, TimestampedMixin):
                     with open(f"/{self.name}", "w") as f:
                         f.write(str(value))
                 except OSError as e:
-                    logger.error(f"Failed to write codex '{self.name}' to filesystem: {e}")
+                    logger.error(
+                        f"Failed to write codex '{self.name}' to filesystem: {e}"
+                    )
                 # Clear any pending code
-                if hasattr(self, '_pending_code'):
+                if hasattr(self, "_pending_code"):
                     del self._pending_code
             else:
                 # Name not set yet — store temporarily until _save() flushes it
@@ -85,7 +88,7 @@ class Codex(Entity, TimestampedMixin):
 
     def _save(self):
         """Override to flush pending code to filesystem after all properties are set."""
-        pending = getattr(self, '_pending_code', None)
+        pending = getattr(self, "_pending_code", None)
         if pending is not None and self.name:
             try:
                 with open(f"/{self.name}", "w") as f:
@@ -99,6 +102,7 @@ class Codex(Entity, TimestampedMixin):
 # ---------------------------------------------------------------------------
 # Call — links Codex code to a TaskStep for execution
 # ---------------------------------------------------------------------------
+
 
 class Call(Entity, TimestampedMixin):
     """
@@ -121,11 +125,14 @@ class Call(Entity, TimestampedMixin):
             run_code = None
 
         if self.is_async:
+
             def async_wrapper():
                 result = run_code(self.codex.code, task_execution=task_execution)
 
                 if not result.get("success"):
-                    raise ValueError(f"Async codex execution failed: {result.get('error')}")
+                    raise ValueError(
+                        f"Async codex execution failed: {result.get('error')}"
+                    )
 
                 # Re-exec to get the async_task function reference
                 exec_logger = task_execution.logger()
@@ -135,6 +142,7 @@ class Call(Entity, TimestampedMixin):
                 try:
                     import basilisk
                     from basilisk import ic
+
                     namespace["basilisk"] = basilisk
                     namespace["ic"] = ic
                 except ImportError:
@@ -151,12 +159,13 @@ class Call(Entity, TimestampedMixin):
                 # If async_task is a generator, use yield from so that
                 # yielded _ServiceCall objects and sub-generators propagate
                 # to the Rust drive_generator for IC inter-canister calls.
-                if hasattr(call_result, '__next__'):
+                if hasattr(call_result, "__next__"):
                     return (yield from call_result)
                 return call_result
 
             return async_wrapper
         else:
+
             def sync_wrapper():
                 return run_code(self.codex.code, task_execution=task_execution)
 
@@ -166,6 +175,7 @@ class Call(Entity, TimestampedMixin):
 # ---------------------------------------------------------------------------
 # TaskExecution — execution record
 # ---------------------------------------------------------------------------
+
 
 class TaskExecution(Entity, TimestampedMixin):
     """Record of a single task execution attempt."""
@@ -200,6 +210,7 @@ class TaskExecution(Entity, TimestampedMixin):
 # TaskStep — single step in a multi-step workflow
 # ---------------------------------------------------------------------------
 
+
 class TaskStep(Entity, TimestampedMixin):
     """
     Represents a single step in a task execution.
@@ -221,6 +232,7 @@ class TaskStep(Entity, TimestampedMixin):
 # ---------------------------------------------------------------------------
 # TaskSchedule — when and how often to run
 # ---------------------------------------------------------------------------
+
 
 class TaskSchedule(Entity, TimestampedMixin):
     """Schedule for running a Task at specified intervals."""
@@ -264,6 +276,7 @@ class TaskSchedule(Entity, TimestampedMixin):
 # Task — the primary work unit
 # ---------------------------------------------------------------------------
 
+
 class Task(Entity, TimestampedMixin):
     """
     Task entity — represents a unit of work that can be scheduled and executed.
@@ -294,6 +307,7 @@ class Task(Entity, TimestampedMixin):
 # Token — registry of ICRC-1 tokens the canister can interact with
 # ---------------------------------------------------------------------------
 
+
 class Token(Entity, TimestampedMixin):
     """
     Registry entry for an ICRC-1 token.
@@ -322,6 +336,7 @@ class Token(Entity, TimestampedMixin):
 # WalletSubaccount — registered subaccount for balance/tx tracking
 # ---------------------------------------------------------------------------
 
+
 class WalletSubaccount(Entity, TimestampedMixin):
     """
     A registered subaccount that the wallet should track.
@@ -349,6 +364,7 @@ class WalletSubaccount(Entity, TimestampedMixin):
 # WalletBalance — tracks token balance per principal
 # ---------------------------------------------------------------------------
 
+
 class WalletBalance(Entity, TimestampedMixin):
     """
     Tracks the cached balance of a token for a specific principal.
@@ -364,6 +380,7 @@ class WalletBalance(Entity, TimestampedMixin):
 # ---------------------------------------------------------------------------
 # WalletTransfer — record of a token transfer
 # ---------------------------------------------------------------------------
+
 
 class WalletTransfer(Entity, TimestampedMixin):
     """
@@ -387,6 +404,7 @@ class WalletTransfer(Entity, TimestampedMixin):
 # FXPair — exchange rate pair tracked via the IC XRC canister
 # ---------------------------------------------------------------------------
 
+
 class FXPair(Entity, TimestampedMixin):
     """
     A registered FX pair whose rate is periodically fetched from the
@@ -403,12 +421,12 @@ class FXPair(Entity, TimestampedMixin):
     """
 
     __alias__ = "name"
-    name = String(max_length=16)             # e.g. "BTC/USD"
-    base_symbol = String(max_length=8)       # e.g. "BTC"
-    base_class = String(max_length=16)       # "Cryptocurrency" or "FiatCurrency"
-    quote_symbol = String(max_length=8)      # e.g. "USD"
-    quote_class = String(max_length=16)      # "Cryptocurrency" or "FiatCurrency"
-    rate = Integer(default=0)                # scaled by 10^decimals
-    decimals = Integer(default=9)            # from XRC metadata
-    last_updated = Integer(default=0)        # IC time in seconds (epoch)
-    last_error = String(max_length=256)      # last error message, empty on success
+    name = String(max_length=16)  # e.g. "BTC/USD"
+    base_symbol = String(max_length=8)  # e.g. "BTC"
+    base_class = String(max_length=16)  # "Cryptocurrency" or "FiatCurrency"
+    quote_symbol = String(max_length=8)  # e.g. "USD"
+    quote_class = String(max_length=16)  # "Cryptocurrency" or "FiatCurrency"
+    rate = Integer(default=0)  # scaled by 10^decimals
+    decimals = Integer(default=9)  # from XRC metadata
+    last_updated = Integer(default=0)  # IC time in seconds (epoch)
+    last_error = String(max_length=256)  # last error message, empty on success

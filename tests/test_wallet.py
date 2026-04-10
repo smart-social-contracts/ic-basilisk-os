@@ -1,5 +1,5 @@
 """
-Integration tests for Basilisk OS Wallet — ICRC-1 token management.
+Integration tests for Basilisk Toolkit Wallet — ICRC-1 token management.
 
 Tests run against a local dfx replica with locally deployed ckBTC ledger
 and indexer canisters. The test canister (shell_test) must be deployed

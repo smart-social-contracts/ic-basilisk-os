@@ -1,5 +1,5 @@
 """
-Basilisk OS — Wallet: native ICRC-1 token management for IC canisters.
+Basilisk Toolkit — Wallet: native ICRC-1 token management for IC canisters.
 
 Provides a high-level API for interacting with ICRC-1 tokens:
 
@@ -44,7 +44,7 @@ from .tokens import WELL_KNOWN_TOKENS  # noqa: F401
 
 class Wallet:
     """
-    Native ICRC-1 wallet for Basilisk OS canisters.
+    Native ICRC-1 wallet for Basilisk Toolkit canisters.
 
     Manages a token registry (persisted via ic-python-db) and provides
     async helpers for ledger and indexer interactions.

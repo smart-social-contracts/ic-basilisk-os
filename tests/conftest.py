@@ -1,5 +1,5 @@
 """
-Shared pytest fixtures for Basilisk OS integration tests.
+Shared pytest fixtures for Basilisk Toolkit integration tests.
 
 These tests run against a LIVE canister — they are integration tests,
 not unit tests. This is intentional: mocks won't catch real issues with
@@ -37,7 +37,7 @@ from ic_basilisk_toolkit.shell import (
 # Configuration
 # ---------------------------------------------------------------------------
 
-DEFAULT_CANISTER = "ru4ga-siaaa-aaaai-q7f3a-cai"  # Dedicated Basilisk OS test canister
+DEFAULT_CANISTER = "ru4ga-siaaa-aaaai-q7f3a-cai"  # Dedicated Basilisk Toolkit test canister
 DEFAULT_NETWORK = "ic"
 
 

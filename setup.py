@@ -8,7 +8,7 @@ setup(
     version="0.1.0",
     author="Smart Social Contracts",
     author_email="contact@smartsocialcontracts.org",
-    description="Basilisk OS — Operating system services, shell, and SFTP for IC Python canisters",
+    description="Basilisk Toolkit — Services, shell, and SFTP for IC Python canisters",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/smart-social-contracts/ic-basilisk-toolkit",

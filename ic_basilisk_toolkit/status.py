@@ -1,5 +1,5 @@
 """
-Basilisk OS — Status enums for task/process management.
+Basilisk Toolkit — Status enums for task/process management.
 
 These enums are used by the task execution system inside the canister.
 Only task-related statuses are included here; application-level statuses

@@ -1,5 +1,5 @@
 """
-Integration tests for Basilisk OS filesystem — canister memfs via basilisk shell exec.
+Integration tests for Basilisk Toolkit filesystem — canister memfs via basilisk shell exec.
 
 Tests the in-memory POSIX filesystem (open, read, write, os.listdir, pathlib, etc.)
 by executing Python code on the canister through Basilisk Shell.

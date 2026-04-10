@@ -1,5 +1,5 @@
 """
-Basilisk OS — Well-known ICRC-1 tokens on IC mainnet.
+Basilisk Toolkit — Well-known ICRC-1 tokens on IC mainnet.
 
 This module has NO canister-side dependencies and can be safely imported
 from both host-side tools (shell, CLI) and canister-side code.

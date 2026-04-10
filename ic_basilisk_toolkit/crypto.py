@@ -1,5 +1,5 @@
 """
-Basilisk OS — CryptoService: on-chain encryption & key sharing via IC vetKeys.
+Basilisk Toolkit — CryptoService: on-chain encryption & key sharing via IC vetKeys.
 
 Provides multi-user encryption with per-principal key envelopes, group-based
 sharing, and an ``EncryptedString`` field type for entity definitions.
@@ -297,7 +297,7 @@ class CryptoService:
         pub_key = yield self._vks.public_key(scope=creator_principal.encode("utf-8"))
         # NOTE: The actual wrapping (asymmetric encryption of DEK with
         # the public key) must be done client-side because the canister
-        # should not see the plaintext DEK in production.  For the OS
+        # should not see the plaintext DEK in production.  For the toolkit
         # layer we store the DEK wrapped in a format the client
         # understands.  The client is responsible for the actual
         # AES-GCM wrap/unwrap using the derived symmetric key.

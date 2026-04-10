@@ -1,5 +1,5 @@
 """
-Basilisk OS — FX Rate Service: periodic exchange rate queries via the IC XRC canister.
+Basilisk Toolkit — FX Rate Service: periodic exchange rate queries via the IC XRC canister.
 
 Provides a high-level API for managing exchange rate pairs and querying
 rates from the IC Exchange Rate Canister (XRC):
@@ -46,7 +46,7 @@ DEFAULT_REFRESH_INTERVAL = 14400
 
 class FXService:
     """
-    FX rate service for Basilisk OS canisters.
+    FX rate service for Basilisk Toolkit canisters.
 
     Manages a registry of FX pairs (persisted via ic-python-db) and provides
     async helpers for querying the IC Exchange Rate Canister.

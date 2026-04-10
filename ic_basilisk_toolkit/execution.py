@@ -1,5 +1,5 @@
 """
-Basilisk OS — Code execution environment.
+Basilisk Toolkit — Code execution environment.
 
 Provides safe code execution with stdout/stderr capture, task-scoped entities,
 and codex lazy loading for canister-resident Python code.

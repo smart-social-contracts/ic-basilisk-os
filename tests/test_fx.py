@@ -1,8 +1,8 @@
 """
-Integration tests for Basilisk OS FX Rate Service — XRC canister integration.
+Integration tests for Basilisk Toolkit FX Rate Service — XRC canister integration.
 
 Tests run against a live IC canister (or local replica). The test canister
-(shell_test) must be deployed with the Basilisk OS runtime.
+(shell_test) must be deployed with the Basilisk Toolkit runtime.
 
 Test categories:
   1. FXPair entity CRUD (synchronous entity operations)

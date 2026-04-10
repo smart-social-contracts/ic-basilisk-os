@@ -1,5 +1,5 @@
 """
-Basilisk OS Test Canister — minimal canister for integration testing.
+Basilisk Toolkit Test Canister — minimal canister for integration testing.
 
 Provides:
   - execute_code_shell: Execute Python code and return output (the core shell endpoint)

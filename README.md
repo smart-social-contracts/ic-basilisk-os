@@ -1,10 +1,10 @@
 # ic-basilisk-toolkit
 
-**Basilisk OS** — Operating system services, interactive shell, and SFTP for [Basilisk](https://github.com/smart-social-contracts/basilisk) IC Python canisters.
+**Basilisk Toolkit** — Services, interactive shell, and SFTP for [Basilisk](https://github.com/smart-social-contracts/basilisk) IC Python canisters.
 
 ## Overview
 
-`ic-basilisk-toolkit` provides POSIX-like abstractions on top of the Basilisk CDK:
+`ic-basilisk-toolkit` provides ready-made services on top of the Basilisk CDK:
 
 - **Task/Process Management** — `Task`, `TaskStep`, `TaskSchedule`, `TaskManager`
 - **Wallet** — ICRC-1 token registry, transfers, balance tracking, transaction sync

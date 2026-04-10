@@ -1,5 +1,5 @@
 """
-Basilisk OS — Task Scheduling Framework
+Basilisk Toolkit — Task Scheduling Framework
 
 Timer-based task scheduling for the Internet Computer supporting one-time and
 recurring tasks with multi-step workflows.

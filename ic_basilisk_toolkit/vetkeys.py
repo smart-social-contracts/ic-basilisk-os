@@ -1,5 +1,5 @@
 """
-Basilisk OS — VetKeyService: on-chain encryption via ICP vetKeys.
+Basilisk Toolkit — VetKeyService: on-chain encryption via ICP vetKeys.
 
 Provides a high-level async API for deriving vetKeys from the IC
 management canister's vetKD (Verifiably Encrypted Threshold Key
@@ -64,7 +64,7 @@ VETKD_KEY_LOCAL = "dfx_test_key"
 
 class VetKeyService:
     """
-    High-level vetKeys service for Basilisk OS canisters.
+    High-level vetKeys service for Basilisk Toolkit canisters.
 
     Wraps the IC management canister's ``vetkd_public_key`` and
     ``vetkd_derive_key`` endpoints with ergonomic helpers for

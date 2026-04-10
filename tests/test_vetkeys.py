@@ -1,5 +1,5 @@
 """
-Integration tests for Basilisk OS vetKeys — vetKD (Verifiably Encrypted
+Integration tests for Basilisk Toolkit vetKeys — vetKD (Verifiably Encrypted
 Threshold Key Derivation) support.
 
 Tests are organized in layers:

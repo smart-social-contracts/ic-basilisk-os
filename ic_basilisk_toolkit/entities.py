@@ -1,8 +1,8 @@
 """
-Basilisk OS — Core entities for task/process management.
+Basilisk Toolkit — Core entities for task/process management.
 
 These entity definitions run inside the canister and depend on ic-python-db.
-They are the canonical Basilisk OS definitions; realms imports from here.
+They are the canonical Basilisk Toolkit definitions; realms imports from here.
 
 Entities:
     Codex         — Stores executable Python code on the persistent filesystem.
@@ -42,7 +42,7 @@ class Codex(Entity, TimestampedMixin):
     Code is persisted as a file at ``/<name>`` using the in-memory filesystem
     (memfs).  The ``code`` property transparently reads/writes this file.
 
-    This is the base Codex entity for Basilisk OS.  Applications (e.g. Realms)
+    This is the base Codex entity for Basilisk Toolkit.  Applications (e.g. Realms)
     may subclass or extend it with additional relationships.
     """
 

@@ -1,4 +1,4 @@
-"""Integration tests for Basilisk OS task management via Basilisk Shell.
+"""Integration tests for Basilisk Toolkit task management via Basilisk Shell.
 
 Tests the %task subcommand system and shortcut aliases (%ps, %start, %kill)
 against a live canister. Tests are self-contained: they create tasks, verify
@@ -678,7 +678,7 @@ class TestTaskExecution:
       TaskExecution recorded → %task log shows result
 
     Uses %task run (synchronous inline execution) for reliable testing.
-    %task start (timer-based) requires full Basilisk OS canister support.
+    %task start (timer-based) requires full Basilisk Toolkit canister support.
     """
 
     def test_create_with_code(self, canister_reachable, canister, network):

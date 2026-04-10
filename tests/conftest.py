@@ -37,7 +37,9 @@ from ic_basilisk_toolkit.shell import (
 # Configuration
 # ---------------------------------------------------------------------------
 
-DEFAULT_CANISTER = "ru4ga-siaaa-aaaai-q7f3a-cai"  # Dedicated Basilisk Toolkit test canister
+DEFAULT_CANISTER = (
+    "ru4ga-siaaa-aaaai-q7f3a-cai"  # Dedicated Basilisk Toolkit test canister
+)
 DEFAULT_NETWORK = "ic"
 
 

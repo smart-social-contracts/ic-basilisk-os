@@ -477,7 +477,8 @@ def _resolve_crypto(_ensure_canister):
     """
     # First, probe whether the module is available at all.
     probe = exec_on_canister(
-        "from basilisk.toolkit.crypto import KeyEnvelope\n" "print('crypto_available')\n"
+        "from basilisk.toolkit.crypto import KeyEnvelope\n"
+        "print('crypto_available')\n"
     )
     if (
         "ImportError" in probe

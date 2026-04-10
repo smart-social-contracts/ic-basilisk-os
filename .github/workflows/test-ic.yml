@@ -1,12 +1,15 @@
 # IC Tests — Basilisk Toolkit features against a live canister on IC mainnet.
 # Tests tasks, wallet, crypto, fx, vetkeys, shell magic commands, database, etc.
-# The canister must already be deployed with ic-python-db bundled.
+# The workflow builds the toolkit test canister WASM (with ic-python-db bundled),
+# installs it on the test canister, runs all test shards, then stops the canister.
 
 name: IC Tests
 
 env:
     PYTHON_VERSION: "3.13"
     DFX_VERSION: "0.30.2"
+    CANISTER_ID: "ru4ga-siaaa-aaaai-q7f3a-cai"
+    NETWORK: "ic"
 
 concurrency:
     group: toolkit-ic-tests-mainnet
@@ -37,7 +40,65 @@ on:
                     - local
 
 jobs:
+    setup-ic-canister:
+        runs-on: ubuntu-latest
+        env:
+            DFX_WARNING: -mainnet_plaintext_identity
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Set up Python
+              uses: actions/setup-python@v5
+              with:
+                  python-version: ${{ env.PYTHON_VERSION }}
+
+            - name: Install dfx
+              run: |
+                  DFXVM_INIT_YES=true DFX_VERSION=${{ env.DFX_VERSION }} sh -ci "$(curl -fsSL https://sdk.dfinity.org/install.sh)"
+                  echo "$HOME/.local/share/dfx/bin" >> $GITHUB_PATH
+
+            - name: Import DFX identity
+              run: |
+                  echo "${{ secrets.IC_IDENTITY_PEM }}" > /tmp/ci-identity.pem
+                  dfx identity import ci-deploy /tmp/ci-identity.pem --storage-mode plaintext 2>/dev/null || true
+                  rm /tmp/ci-identity.pem
+                  dfx identity use ci-deploy
+
+            - name: Install basilisk
+              run: |
+                  pip install ic-basilisk
+
+            - name: Pre-download canister template
+              run: |
+                  VERSION=$(python3 -c "import basilisk; print(basilisk.__version__)")
+                  TEMPLATE_DIR="$HOME/.config/basilisk/${VERSION}"
+                  mkdir -p "$TEMPLATE_DIR"
+                  curl -Lf "https://github.com/smart-social-contracts/basilisk/releases/download/cpython-wasm-3.13.0/cpython_canister_template.wasm" \
+                    -o "$TEMPLATE_DIR/cpython_canister_template.wasm"
+                  echo "Template cached at $TEMPLATE_DIR/cpython_canister_template.wasm ($(du -sh "$TEMPLATE_DIR/cpython_canister_template.wasm" | cut -f1))"
+
+            - name: Build test canister WASM
+              working-directory: tests/test_canister
+              run: |
+                  pip install ic-python-db ic-python-logging
+                  CANISTER_CANDID_PATH=./shell_test.did python -m basilisk shell_test src/main.py
+                  ls -la .basilisk/shell_test/shell_test.wasm
+
+            - name: Reinstall canister with fresh WASM
+              working-directory: tests/test_canister
+              run: |
+                  echo "Stopping canister $CANISTER_ID..."
+                  dfx canister stop "$CANISTER_ID" --network "$NETWORK" 2>/dev/null || true
+                  sleep 3
+                  echo "Reinstalling canister with fresh WASM..."
+                  dfx canister install "$CANISTER_ID" --mode reinstall --yes --network "$NETWORK" --wasm .basilisk/shell_test/shell_test.wasm
+                  echo "Starting canister..."
+                  dfx canister start "$CANISTER_ID" --network "$NETWORK"
+                  echo "Verifying canister is reachable..."
+                  dfx canister call "$CANISTER_ID" status --network "$NETWORK"
+
     ic-tests:
+        needs: setup-ic-canister
         runs-on: ubuntu-latest
         strategy:
             fail-fast: false
@@ -120,3 +181,27 @@ jobs:
                   else
                     PYTHONPATH=. python -m pytest ${{ matrix.pytest_args }} -v -o "addopts="
                   fi
+
+    teardown-ic-canister:
+        needs: ic-tests
+        if: always()
+        runs-on: ubuntu-latest
+        env:
+            DFX_WARNING: -mainnet_plaintext_identity
+        steps:
+            - name: Install dfx
+              run: |
+                  DFXVM_INIT_YES=true DFX_VERSION=${{ env.DFX_VERSION }} sh -ci "$(curl -fsSL https://sdk.dfinity.org/install.sh)"
+                  echo "$HOME/.local/share/dfx/bin" >> $GITHUB_PATH
+
+            - name: Import DFX identity
+              run: |
+                  echo "${{ secrets.IC_IDENTITY_PEM }}" > /tmp/ci-identity.pem
+                  dfx identity import ci-deploy /tmp/ci-identity.pem --storage-mode plaintext 2>/dev/null || true
+                  rm /tmp/ci-identity.pem
+                  dfx identity use ci-deploy
+
+            - name: Stop canister
+              run: |
+                  echo "Stopping canister $CANISTER_ID on $NETWORK..."
+                  dfx canister stop "$CANISTER_ID" --network "$NETWORK" || true

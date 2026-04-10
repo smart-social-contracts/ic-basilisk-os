@@ -48,7 +48,7 @@ fi
 # Lint with flake8 (no auto-fix available)
 echo "Running flake8..."
 # Using configuration from setup.cfg
-flake8 ic_basilisk_toolkit tests --exclude=tests/venv,tests/.basilisk,*/.basilisk/*,*/__pycache__/*
+flake8 --config .flake8 ic_basilisk_toolkit tests --exclude=tests/venv,tests/.basilisk,*/.basilisk/*,*/__pycache__/*
 
 # Type check with mypy (no auto-fix available)
 echo "Running mypy..."

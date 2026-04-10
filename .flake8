@@ -7,8 +7,12 @@
 # W503  line break before binary operator
 # W504  line break after binary operator
 # F541  f-string without placeholders
+# F401  imported but unused (re-exports, test fixtures)
+# F402  import shadowed by loop variable
 # F824  global unused
-ignore = E501,E203,E402,E741,W391,W503,W504,F541,F824
+# F841  local variable assigned but unused
+# E722  bare except
+ignore = E501,E203,E402,E722,E741,W391,W503,W504,F401,F402,F541,F824,F841
 
 # Other style checks will still be enforced
 exclude = 

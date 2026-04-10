@@ -4,6 +4,21 @@ on:
   release:
     types: [published]
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g. 0.2.0). Leave empty to publish current version.'
+        required: false
+        type: string
+      bump:
+        description: 'Or pick a bump level (ignored if version is set)'
+        required: false
+        type: choice
+        default: 'none'
+        options:
+          - none
+          - patch
+          - minor
+          - major
 
 jobs:
   publish:
@@ -18,7 +33,25 @@ jobs:
           python-version: '3.10'
 
       - name: Install build dependencies
-        run: pip install build twine setuptools wheel
+        run: pip install build twine setuptools wheel bump2version
+
+      - name: Bump version (if requested)
+        if: github.event_name == 'workflow_dispatch' && (inputs.version != '' || inputs.bump != 'none')
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if [ -n "${{ inputs.version }}" ]; then
+            # Explicit version: update all files directly
+            OLD_VERSION=$(grep 'current_version' .bumpversion.cfg | head -1 | cut -d= -f2 | tr -d ' ')
+            sed -i "s/$OLD_VERSION/${{ inputs.version }}/g" setup.py pyproject.toml ic_basilisk_toolkit/__init__.py .bumpversion.cfg
+            echo "Version set to ${{ inputs.version }}"
+          else
+            # Bump by level
+            bump2version ${{ inputs.bump }} --no-commit --no-tag
+            echo "Bumped version (${{ inputs.bump }})"
+          fi
+          NEW_VERSION=$(grep 'current_version' .bumpversion.cfg | head -1 | cut -d= -f2 | tr -d ' ')
+          echo "Publishing version: $NEW_VERSION"
 
       - name: Verify version consistency
         run: |

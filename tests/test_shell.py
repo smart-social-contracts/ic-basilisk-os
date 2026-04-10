@@ -252,7 +252,7 @@ class TestMagicCommands:
         result = _handle_magic("%nonexistent_cmd", canister, network)
         assert result is None
 
-    def test_run_nonexistent_file(self, canister, network):
+    def test_run_nonexistent_file(self, dfx_available, canister, network):
         result = _handle_magic("%run /nonexistent/file.py", canister, network)
         assert "no such file" in result.lower()
 

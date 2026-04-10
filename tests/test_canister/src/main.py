@@ -28,7 +28,7 @@ from basilisk.canisters.management import (
     HttpTransformArgs,
     management_canister,
 )
-from basilisk.db import Database
+from ic_python_db import Database
 
 # ---------------------------------------------------------------------------
 # Persistent database storage (survives canister upgrades)

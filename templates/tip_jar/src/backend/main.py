@@ -22,8 +22,8 @@ from basilisk import (
     query, update, text, nat64, ic, Async,
     StableBTreeMap, GuardResult, init, post_upgrade,
 )
-from basilisk.db import Database
-from basilisk.logging import get_logger
+from ic_python_db import Database
+from ic_python_logging import get_logger
 
 _log = get_logger("tip_jar")
 
@@ -134,7 +134,7 @@ _FX_REFRESH_INTERVAL = 3600  # in seconds
 _FX_TASK_NAME = "fx_refresh"
 
 _FX_REFRESH_CODE = """\
-from basilisk.logging import get_logger
+from ic_python_logging import get_logger
 from services import fx
 
 logger = get_logger("tip_jar.fx_refresh")

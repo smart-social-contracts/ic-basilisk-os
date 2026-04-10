@@ -17,7 +17,7 @@ import os
 
 from basilisk import query, update, text, nat64, ic, Async, match, CallResult
 from basilisk.canisters.management import HttpResponse, HttpTransformArgs
-from basilisk.logging import get_logger
+from ic_python_logging import get_logger
 
 from models import Donor, PendingTip, TipMessage, SecretNote
 from services import wallet, fx, crypto, vetkeys

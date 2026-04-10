@@ -16,11 +16,17 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.10.7'
-      - name: Install dependencies
+      - name: Install ic-basilisk
+        run: pip install ic-basilisk
+      - name: Install toolkit (editable) + dev deps
         run: |
-          pip install -r requirements.txt
-          pip install -r requirements-dev.txt
           pip install -e .
-      - name: Run tests
+          pip install -r requirements-dev.txt
+      - name: Verify installation
         run: |
-          pytest tests/ -v --ignore=tests/test_canister --ignore=tests/fixtures -x
+          python -c "import ic_basilisk_toolkit; print(f'ic-basilisk-toolkit {ic_basilisk_toolkit.__version__}')"
+          python -c "from ic_basilisk_toolkit.shell import canister_exec; print('shell OK')"
+          python -c "from ic_basilisk_toolkit.status import TaskStatus; print('status OK')"
+          python -c "from ic_basilisk_toolkit.cli import main; print('cli OK')"
+      - name: Run tests
+        run: pytest tests/ -v --ignore=tests/test_canister -x

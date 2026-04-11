@@ -41,7 +41,9 @@ class BasiliskSSHServer(asyncssh.SSHServer):
         return True
 
 
-def _make_process_factory(canister: str, network: str, module_dir: str, identity: str = None):
+def _make_process_factory(
+    canister: str, network: str, module_dir: str, identity: str = None
+):
     """Create a factory that spawns basilisk shell as the SSH shell process."""
 
     async def process_factory(process):
@@ -131,7 +133,9 @@ def _make_process_factory(canister: str, network: str, module_dir: str, identity
     return process_factory
 
 
-async def start_server(canister: str, network: str, port: int, host_key_path: str, identity: str = None):
+async def start_server(
+    canister: str, network: str, port: int, host_key_path: str, identity: str = None
+):
     """Start the SSH server."""
 
     # Generate host key if it doesn't exist
@@ -196,7 +200,9 @@ async def start_server(canister: str, network: str, port: int, host_key_path: st
     )
 
 
-async def async_main(canister: str, network: str, port: int, host_key_path: str, identity: str = None):
+async def async_main(
+    canister: str, network: str, port: int, host_key_path: str, identity: str = None
+):
     await start_server(canister, network, port, host_key_path, identity)
     # Run forever
     await asyncio.Future()
@@ -222,7 +228,11 @@ def main():
     args = parser.parse_args()
 
     try:
-        asyncio.run(async_main(args.canister, args.network, args.port, args.host_key, args.identity))
+        asyncio.run(
+            async_main(
+                args.canister, args.network, args.port, args.host_key, args.identity
+            )
+        )
     except KeyboardInterrupt:
         print("\nbasilisk sshd stopped.", file=sys.stderr)
     except OSError as e:

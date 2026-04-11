@@ -407,7 +407,7 @@ class TestOneshotMode:
         cmd = [
             sys.executable,
             "-m",
-            "basilisk.shell",
+            "ic_basilisk_toolkit.shell",
             "--canister",
             canister,
             "--network",
@@ -468,7 +468,7 @@ class TestFileMode:
             cmd = [
                 sys.executable,
                 "-m",
-                "basilisk.shell",
+                "ic_basilisk_toolkit.shell",
                 "--canister",
                 canister,
                 "--network",
@@ -491,7 +491,7 @@ class TestFileMode:
         cmd = [
             sys.executable,
             "-m",
-            "basilisk.shell",
+            "ic_basilisk_toolkit.shell",
             "--canister",
             canister,
             "--network",
@@ -521,7 +521,7 @@ class TestPipeMode:
         cmd = [
             sys.executable,
             "-m",
-            "basilisk.shell",
+            "ic_basilisk_toolkit.shell",
             "--canister",
             canister,
             "--network",
@@ -554,7 +554,7 @@ class TestWatchMode:
         cmd = [
             sys.executable,
             "-m",
-            "basilisk.shell",
+            "ic_basilisk_toolkit.shell",
             "--canister",
             canister,
             "--network",

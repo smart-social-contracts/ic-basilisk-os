@@ -135,7 +135,9 @@ def _is_transient_dfx_error(stderr: str) -> bool:
 _IDENTITY = None
 
 
-def _dfx_call_cmd(network: str = None, *, extra_flags: list[str] | None = None) -> list[str]:
+def _dfx_call_cmd(
+    network: str = None, *, extra_flags: list[str] | None = None
+) -> list[str]:
     """Build the common `dfx canister call [--identity ...] [--network ...]` prefix."""
     cmd = ["dfx", "canister", "call"]
     if _IDENTITY:
@@ -4250,7 +4252,6 @@ FILESYSTEM
       Python: basilisk.io.wget(url, dest)
   %run <file>              Execute Python file in canister
       Python: basilisk.run(file)""",
-
     "task": """\
 TASKS
   %task                    List all tasks (alias: %ps)
@@ -4264,7 +4265,6 @@ TASKS
   %task start <id|name>    Start task (timer-based)
   %task stop <id|name>     Stop running task
   %task delete <id|name>   Delete task and all steps""",
-
     "db": """\
 DATABASE
   %db types                List entity types with counts
@@ -4280,7 +4280,6 @@ DATABASE
   %db count                Show total entity count
   %db dump                 Dump all entities as JSON
   %db clear                Clear all entities (danger!)""",
-
     "wallet": """\
 WALLET
   %wallet <token> balance              Check canister token balance
@@ -4293,7 +4292,6 @@ WALLET
       Python: Wallet.last_result()
 
   Supported tokens: ckbtc, cketh, icp""",
-
     "vetkey": """\
 VETKEY (Encryption)
   %vetkey pubkey [--scope <s>]     Get vetKD public key
@@ -4304,7 +4302,6 @@ VETKEY (Encryption)
       Python: vetkey.encrypt(target)
   %vetkey decrypt <file|text>      Decrypt file or text
       Python: vetkey.decrypt(target)""",
-
     "group": """\
 GROUPS (Encryption Groups)
   %group                           List groups
@@ -4313,7 +4310,6 @@ GROUPS (Encryption Groups)
   %group add <name> <principal>    Add member
   %group remove <name> <principal> Remove member
   %group members <name>            List members""",
-
     "crypto": """\
 CRYPTO (File Encryption)
   %crypto status              Show encryption status
@@ -4324,7 +4320,6 @@ CRYPTO (File Encryption)
   %crypto revoke <target>     Revoke shared access
   %crypto envelopes           List key envelopes
   %crypto init                Initialize encryption""",
-
     "repl": """\
 REPL COMMANDS
   %who                     List variables in namespace

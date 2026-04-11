@@ -84,6 +84,7 @@ def cmd_exec(args: list[str]):
     """Execute Python code on a deployed basilisk canister."""
     canister = None
     network = None
+    identity = None
     file_path = None
     code_parts = []
 
@@ -94,6 +95,9 @@ def cmd_exec(args: list[str]):
             i += 2
         elif args[i] == "--network" and i + 1 < len(args):
             network = args[i + 1]
+            i += 2
+        elif args[i] == "--identity" and i + 1 < len(args):
+            identity = args[i + 1]
             i += 2
         elif args[i] == "-f" and i + 1 < len(args):
             file_path = args[i + 1]
@@ -135,6 +139,8 @@ def cmd_exec(args: list[str]):
     # Build dfx command
     escaped_code = code.replace('"', '\\"').replace("\n", "\\n")
     cmd = ["dfx", "canister", "call"]
+    if identity:
+        cmd.extend(["--identity", identity])
     if network:
         cmd.extend(["--network", network])
     cmd.extend([canister, "execute_code_shell", f'("{escaped_code}")'])

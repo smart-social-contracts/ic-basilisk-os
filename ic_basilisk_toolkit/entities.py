@@ -136,7 +136,7 @@ class Call(Entity, TimestampedMixin):
 
                 # Re-exec to get the async_task function reference
                 exec_logger = task_execution.logger()
-                namespace = {"logger": exec_logger}
+                namespace = {"logger": exec_logger, "get_logger": lambda name=None: exec_logger}
 
                 # Try to import canister-specific modules
                 try:
@@ -148,7 +148,15 @@ class Call(Entity, TimestampedMixin):
                 except ImportError:
                     pass
 
-                exec(self.codex.code, namespace, namespace)
+                # Monkey-patch get_logger so that `from ic_python_logging import get_logger`
+                # inside the exec'd code returns the task execution logger.
+                import ic_python_logging as _ipl
+                _orig_get_logger = _ipl.get_logger
+                _ipl.get_logger = lambda name=None: exec_logger
+                try:
+                    exec(self.codex.code, namespace, namespace)
+                finally:
+                    _ipl.get_logger = _orig_get_logger
 
                 async_task_fn = namespace.get("async_task")
                 if async_task_fn is None:

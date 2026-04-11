@@ -41,7 +41,7 @@ class BasiliskSSHServer(asyncssh.SSHServer):
         return True
 
 
-def _make_process_factory(canister: str, network: str, module_dir: str):
+def _make_process_factory(canister: str, network: str, module_dir: str, identity: str = None):
     """Create a factory that spawns basilisk shell as the SSH shell process."""
 
     async def process_factory(process):
@@ -56,6 +56,8 @@ def _make_process_factory(canister: str, network: str, module_dir: str):
         ]
         if network:
             cmd.extend(["--network", network])
+        if identity:
+            cmd.extend(["--identity", identity])
 
         # If the client sent a specific command (ssh host 'command'),
         # pass it with -c. Otherwise, force interactive mode.
@@ -129,7 +131,7 @@ def _make_process_factory(canister: str, network: str, module_dir: str):
     return process_factory
 
 
-async def start_server(canister: str, network: str, port: int, host_key_path: str):
+async def start_server(canister: str, network: str, port: int, host_key_path: str, identity: str = None):
     """Start the SSH server."""
 
     # Generate host key if it doesn't exist
@@ -176,7 +178,7 @@ async def start_server(canister: str, network: str, port: int, host_key_path: st
     print(f"  sftp -P {port} -o StrictHostKeyChecking=no localhost", file=sys.stderr)
     sys.stderr.flush()
 
-    process_factory = _make_process_factory(canister, network, module_dir)
+    process_factory = _make_process_factory(canister, network, module_dir, identity)
 
     # SFTP factory: creates a CanisterSFTPServer per connection
     from .sftp import CanisterSFTPServer
@@ -194,8 +196,8 @@ async def start_server(canister: str, network: str, port: int, host_key_path: st
     )
 
 
-async def async_main(canister: str, network: str, port: int, host_key_path: str):
-    await start_server(canister, network, port, host_key_path)
+async def async_main(canister: str, network: str, port: int, host_key_path: str, identity: str = None):
+    await start_server(canister, network, port, host_key_path, identity)
     # Run forever
     await asyncio.Future()
 
@@ -207,6 +209,7 @@ def main():
     )
     parser.add_argument("--canister", required=True, help="Canister name or ID")
     parser.add_argument("--network", default=None, help="Network: local, ic, or URL")
+    parser.add_argument("--identity", default=None, help="dfx identity to use")
     parser.add_argument(
         "--port", type=int, default=2222, help="SSH port (default: 2222)"
     )
@@ -219,7 +222,7 @@ def main():
     args = parser.parse_args()
 
     try:
-        asyncio.run(async_main(args.canister, args.network, args.port, args.host_key))
+        asyncio.run(async_main(args.canister, args.network, args.port, args.host_key, args.identity))
     except KeyboardInterrupt:
         print("\nbasilisk sshd stopped.", file=sys.stderr)
     except OSError as e:

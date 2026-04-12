@@ -205,6 +205,7 @@ def main():
 # (registered via pyproject.toml [project.entry-points."basilisk.commands"])
 # ---------------------------------------------------------------------------
 
+
 def plugin_shell():
     """basilisk shell — Interactive Python shell on a deployed canister."""
     from ic_basilisk_toolkit.shell import main as shell_main

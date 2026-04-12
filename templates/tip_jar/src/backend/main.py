@@ -147,8 +147,8 @@ def async_task():
 
 def _ensure_fx_task():
     """Create the recurring FX refresh task if it doesn't exist yet."""
-    from basilisk.toolkit.entities import Task, Call, TaskStep, TaskSchedule, Codex
-    from basilisk.toolkit.task_manager import TaskManager
+    from ic_basilisk_toolkit.entities import Task, Call, TaskStep, TaskSchedule, Codex
+    from ic_basilisk_toolkit.task_manager import TaskManager
 
     task = Task[_FX_TASK_NAME]
     if task is None:

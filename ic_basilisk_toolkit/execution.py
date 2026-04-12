@@ -46,7 +46,7 @@ from ic_python_logging import get_logger, get_logs
 if TYPE_CHECKING:
     from .entities import Task, TaskExecution
 
-logger = get_logger("basilisk.toolkit.execution")
+logger = get_logger("ic_basilisk_toolkit.execution")
 
 _codex_lazy_loading_installed = False
 

@@ -3463,7 +3463,7 @@ _GROUP_USAGE = (
 def _group_list_code() -> str:
     """Generate on-canister code for %group list."""
     return (
-        "from basilisk.toolkit.crypto import CryptoGroup, CryptoGroupMember\n"
+        "from ic_basilisk_toolkit.crypto import CryptoGroup, CryptoGroupMember\n"
         "_groups = list(CryptoGroup.instances())\n"
         "if not _groups:\n"
         "    print('No groups defined.')\n"
@@ -3480,7 +3480,7 @@ def _group_create_code(name: str, description: str = "") -> str:
     esc_name = name.replace("'", "\\'")
     esc_desc = description.replace("'", "\\'")
     return (
-        "from basilisk.toolkit.crypto import CryptoGroup\n"
+        "from ic_basilisk_toolkit.crypto import CryptoGroup\n"
         f"_existing = CryptoGroup['{esc_name}']\n"
         "if _existing:\n"
         f"    print('Group {esc_name} already exists.')\n"
@@ -3494,7 +3494,7 @@ def _group_delete_code(name: str) -> str:
     """Generate on-canister code for %group delete."""
     esc_name = name.replace("'", "\\'")
     return (
-        "from basilisk.toolkit.crypto import CryptoGroup, CryptoGroupMember\n"
+        "from ic_basilisk_toolkit.crypto import CryptoGroup, CryptoGroupMember\n"
         f"_g = CryptoGroup['{esc_name}']\n"
         "if not _g:\n"
         f"    print('Group {esc_name} not found.')\n"
@@ -3513,7 +3513,7 @@ def _group_members_code(name: str) -> str:
     """Generate on-canister code for %group members."""
     esc_name = name.replace("'", "\\'")
     return (
-        "from basilisk.toolkit.crypto import CryptoGroup, CryptoGroupMember\n"
+        "from ic_basilisk_toolkit.crypto import CryptoGroup, CryptoGroupMember\n"
         f"_g = CryptoGroup['{esc_name}']\n"
         "if not _g:\n"
         f"    print('Group {esc_name} not found.')\n"
@@ -3532,7 +3532,7 @@ def _group_add_code(name: str, principal: str) -> str:
     esc_name = name.replace("'", "\\'")
     esc_princ = principal.replace("'", "\\'")
     return (
-        "from basilisk.toolkit.crypto import CryptoGroup, CryptoGroupMember\n"
+        "from ic_basilisk_toolkit.crypto import CryptoGroup, CryptoGroupMember\n"
         f"_g = CryptoGroup['{esc_name}']\n"
         "if not _g:\n"
         f"    print('Group {esc_name} not found.')\n"
@@ -3555,7 +3555,7 @@ def _group_remove_code(name: str, principal: str) -> str:
     esc_name = name.replace("'", "\\'")
     esc_princ = principal.replace("'", "\\'")
     return (
-        "from basilisk.toolkit.crypto import CryptoGroupMember, KeyEnvelope\n"
+        "from ic_basilisk_toolkit.crypto import CryptoGroupMember, KeyEnvelope\n"
         "_found = False\n"
         "for _m in list(CryptoGroupMember.instances()):\n"
         f"    if str(_m.group) == '{esc_name}' and str(_m.principal) == '{esc_princ}':\n"
@@ -3649,7 +3649,7 @@ _CRYPTO_USAGE = (
 def _crypto_status_code() -> str:
     """Generate on-canister code for %crypto status."""
     return (
-        "from basilisk.toolkit.crypto import KeyEnvelope\n"
+        "from ic_basilisk_toolkit.crypto import KeyEnvelope\n"
         "_caller = ic.caller().to_str()\n"
         "_scopes = set()\n"
         "for _e in KeyEnvelope.instances():\n"
@@ -3666,7 +3666,7 @@ def _crypto_status_code() -> str:
 def _crypto_scopes_code() -> str:
     """Generate on-canister code for %crypto scopes."""
     return (
-        "from basilisk.toolkit.crypto import KeyEnvelope\n"
+        "from ic_basilisk_toolkit.crypto import KeyEnvelope\n"
         "_caller = ic.caller().to_str()\n"
         "_scopes = {}\n"
         "for _e in KeyEnvelope.instances():\n"
@@ -3692,7 +3692,7 @@ def _crypto_envelopes_code(scope: str) -> str:
     """Generate on-canister code for %crypto envelopes <scope>."""
     esc = scope.replace("'", "\\'")
     return (
-        "from basilisk.toolkit.crypto import KeyEnvelope, CryptoGroupMember\n"
+        "from ic_basilisk_toolkit.crypto import KeyEnvelope, CryptoGroupMember\n"
         f"_scope = '{esc}'\n"
         "_caller = ic.caller().to_str()\n"
         "_envelopes = [e for e in KeyEnvelope.instances() if str(e.scope) == _scope]\n"
@@ -3722,7 +3722,7 @@ def _crypto_init_code(scope: str) -> str:
     esc = scope.replace("'", "\\'")
     return (
         "import os as _os\n"
-        "from basilisk.toolkit.crypto import KeyEnvelope, encode_envelope\n"
+        "from ic_basilisk_toolkit.crypto import KeyEnvelope, encode_envelope\n"
         f"_scope = '{esc}'\n"
         "_caller = ic.caller().to_str()\n"
         "_existing = None\n"
@@ -3745,7 +3745,7 @@ def _crypto_share_principal_code(scope: str, principal: str) -> str:
     esc_scope = scope.replace("'", "\\'")
     esc_princ = principal.replace("'", "\\'")
     return (
-        "from basilisk.toolkit.crypto import KeyEnvelope, encode_envelope\n"
+        "from ic_basilisk_toolkit.crypto import KeyEnvelope, encode_envelope\n"
         f"_scope = '{esc_scope}'\n"
         f"_target = '{esc_princ}'\n"
         "_existing = None\n"
@@ -3767,7 +3767,7 @@ def _crypto_share_group_code(scope: str, group_name: str) -> str:
     esc_scope = scope.replace("'", "\\'")
     esc_group = group_name.replace("'", "\\'")
     return (
-        "from basilisk.toolkit.crypto import CryptoGroup, CryptoGroupMember, KeyEnvelope, encode_envelope\n"
+        "from ic_basilisk_toolkit.crypto import CryptoGroup, CryptoGroupMember, KeyEnvelope, encode_envelope\n"
         f"_scope = '{esc_scope}'\n"
         f"_group_name = '{esc_group}'\n"
         "_group = CryptoGroup[_group_name]\n"
@@ -3798,7 +3798,7 @@ def _crypto_revoke_principal_code(scope: str, principal: str) -> str:
     esc_scope = scope.replace("'", "\\'")
     esc_princ = principal.replace("'", "\\'")
     return (
-        "from basilisk.toolkit.crypto import KeyEnvelope\n"
+        "from ic_basilisk_toolkit.crypto import KeyEnvelope\n"
         f"_scope = '{esc_scope}'\n"
         f"_target = '{esc_princ}'\n"
         "_found = False\n"
@@ -3819,7 +3819,7 @@ def _crypto_revoke_group_code(scope: str, group_name: str) -> str:
     esc_scope = scope.replace("'", "\\'")
     esc_group = group_name.replace("'", "\\'")
     return (
-        "from basilisk.toolkit.crypto import CryptoGroupMember, KeyEnvelope\n"
+        "from ic_basilisk_toolkit.crypto import CryptoGroupMember, KeyEnvelope\n"
         f"_scope = '{esc_scope}'\n"
         f"_group_name = '{esc_group}'\n"
         "_members = [m for m in CryptoGroupMember.instances() if str(m.group) == _group_name]\n"
@@ -3839,7 +3839,7 @@ def _crypto_encrypt_file_code(filepath: str, scope: str) -> str:
     esc_scope = scope.replace("'", "\\'")
     return (
         "import os as _os\n"
-        "from basilisk.toolkit.crypto import encode_ciphertext, is_encrypted\n"
+        "from ic_basilisk_toolkit.crypto import encode_ciphertext, is_encrypted\n"
         f"_path = '{esc_path}'\n"
         f"_scope = '{esc_scope}'\n"
         "try:\n"
@@ -3864,7 +3864,7 @@ def _crypto_decrypt_file_code(filepath: str) -> str:
     """Generate on-canister code for %crypto decrypt <file>."""
     esc_path = filepath.replace("'", "\\'")
     return (
-        "from basilisk.toolkit.crypto import decode_ciphertext, is_encrypted\n"
+        "from ic_basilisk_toolkit.crypto import decode_ciphertext, is_encrypted\n"
         f"_path = '{esc_path}'\n"
         "try:\n"
         "    with open(_path, 'r') as _f:\n"
@@ -3890,7 +3890,7 @@ def _crypto_encrypt_text_code(plaintext: str, scope: str) -> str:
     esc_scope = scope.replace("'", "\\'")
     return (
         "import os as _os\n"
-        "from basilisk.toolkit.crypto import encode_ciphertext\n"
+        "from ic_basilisk_toolkit.crypto import encode_ciphertext\n"
         f"_text = '{esc_text}'\n"
         "_iv = _os.urandom(12)\n"
         "_ct = encode_ciphertext(_iv.hex(), _text.encode('utf-8').hex())\n"
@@ -3902,7 +3902,7 @@ def _crypto_decrypt_text_code(ciphertext: str) -> str:
     """Generate on-canister code for %crypto decrypt-text."""
     esc_ct = ciphertext.replace("'", "\\'")
     return (
-        "from basilisk.toolkit.crypto import decode_ciphertext, is_encrypted\n"
+        "from ic_basilisk_toolkit.crypto import decode_ciphertext, is_encrypted\n"
         f"_ct = '{esc_ct}'\n"
         "if not is_encrypted(_ct):\n"
         "    print('Not in encrypted format.')\n"

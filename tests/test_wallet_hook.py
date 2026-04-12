@@ -25,7 +25,7 @@ try:
     from ic_basilisk_toolkit.wallet import Wallet
 except ImportError:
     pytest.skip(
-        "basilisk.toolkit.wallet requires canister-only modules (ic_python_logging)",
+        "ic_basilisk_toolkit.wallet requires canister-only modules (ic_python_logging)",
         allow_module_level=True,
     )
 

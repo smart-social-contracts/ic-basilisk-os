@@ -27,7 +27,7 @@ from ic_python_logging import get_logger
 
 from .status import TaskExecutionStatus
 
-logger = get_logger("basilisk.toolkit.entities")
+logger = get_logger("ic_basilisk_toolkit.entities")
 
 
 # ---------------------------------------------------------------------------
@@ -329,7 +329,7 @@ class Token(Entity, TimestampedMixin):
 
     Usage::
 
-        from basilisk.toolkit.wallet import WELL_KNOWN_TOKENS
+        from ic_basilisk_toolkit.wallet import WELL_KNOWN_TOKENS
         wallet.register_well_known_tokens("ckBTC")  # auto-registers from registry
     """
 

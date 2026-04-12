@@ -200,5 +200,34 @@ def main():
         sys.exit(1)
 
 
+# ---------------------------------------------------------------------------
+# Entry-point handlers for basilisk CLI plugin discovery
+# (registered via pyproject.toml [project.entry-points."basilisk.commands"])
+# ---------------------------------------------------------------------------
+
+def plugin_shell():
+    """basilisk shell — Interactive Python shell on a deployed canister."""
+    from ic_basilisk_toolkit.shell import main as shell_main
+
+    sys.argv = ["basilisk shell"] + sys.argv[2:]
+    shell_main()
+
+
+def plugin_exec():
+    """basilisk exec — Execute Python code on a deployed canister."""
+    if "--help" in sys.argv[2:] or "-h" in sys.argv[2:]:
+        print(_HELP_EXEC, end="")
+        return
+    cmd_exec(sys.argv[2:])
+
+
+def plugin_sshd():
+    """basilisk sshd — Start an SSH/SFTP server proxy to a canister."""
+    from ic_basilisk_toolkit.sshd import main as sshd_main
+
+    sys.argv = ["basilisk sshd"] + sys.argv[2:]
+    sshd_main()
+
+
 if __name__ == "__main__":
     main()

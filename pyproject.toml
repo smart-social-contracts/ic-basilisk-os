@@ -36,6 +36,11 @@ test = ["pytest>=7.0.0", "pytest-cov>=4.0.0"]
 [project.scripts]
 basilisk-toolkit = "ic_basilisk_toolkit.cli:main"
 
+[project.entry-points."basilisk.commands"]
+shell = "ic_basilisk_toolkit.cli:plugin_shell"
+exec = "ic_basilisk_toolkit.cli:plugin_exec"
+sshd = "ic_basilisk_toolkit.cli:plugin_sshd"
+
 [project.urls]
 Homepage = "https://github.com/smart-social-contracts/ic-basilisk-toolkit"
 Repository = "https://github.com/smart-social-contracts/ic-basilisk-toolkit.git"

@@ -4249,9 +4249,8 @@ FILESYSTEM
   %mkdir <path>            Create directory
       Python: os.makedirs(path, exist_ok=True)
   %wget <url> <dest>       Download URL to canister
-      Python: basilisk.io.wget(url, dest)
   %run <file>              Execute Python file in canister
-      Python: basilisk.run(file)""",
+      Python: exec(open(file).read())""",
     "task": """\
 TASKS
   %task                    List all tasks (alias: %ps)

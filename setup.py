@@ -14,7 +14,13 @@ setup(
     url="https://github.com/smart-social-contracts/ic-basilisk-toolkit",
     packages=find_packages(),
     classifiers=[
+        "Development Status :: 3 - Alpha",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: MIT License",
+        "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.10",
+        "Topic :: Software Development :: Libraries :: Python Modules",
+        "Topic :: Internet",
     ],
     python_requires=">=3.10",
     install_requires=[

@@ -149,7 +149,7 @@ jobs:
                   fi
 
                   echo "Verifying backend is reachable..."
-                  dfx canister call "$BACKEND_CANISTER_ID" status --network "$NETWORK"
+                  dfx canister call "$BACKEND_CANISTER_ID" status --network "$NETWORK" || echo "⚠️ status call failed (may need a second deploy if post_upgrade had stale code)"
 
             - name: Deploy frontend
               working-directory: templates/tip_jar

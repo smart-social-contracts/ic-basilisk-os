@@ -24,6 +24,9 @@ from services import wallet, fx, crypto, vetkeys
 
 logger = get_logger("tip_jar.endpoints")
 
+# Deploy timestamp — set by main.py during init/post_upgrade
+_deploy_timestamp_ns = None
+
 
 # ═══════════════════════════════════════════════════════════════════════════
 # 1. QUERY ENDPOINTS  (read-only, no inter-canister calls)
@@ -158,37 +161,22 @@ def status() -> text:
 
     result = {"status": "ok"}
 
+    result["cpython"] = sys.version.split()[0]
+
     # Build-time metadata (versions, commit hashes, dates)
     try:
         from _build_info import BUILD_INFO
         result["build"] = BUILD_INFO
-        result["cpython"] = BUILD_INFO.get("cpython", sys.version.split()[0])
         result["basilisk_version"] = BUILD_INFO.get("basilisk", {}).get("version", "")
         result["toolkit_version"] = BUILD_INFO.get("toolkit", {}).get("version", "")
         result["ic_python_db_version"] = BUILD_INFO.get("ic_python_db", {}).get("version", "")
         result["ic_python_logging_version"] = BUILD_INFO.get("ic_python_logging", {}).get("version", "")
-    except ImportError:
-        # Fallback: try runtime imports (may not all be available inside canister)
-        result["cpython"] = sys.version.split()[0]
-        for mod_name, key in [
-            ("basilisk", "basilisk_version"),
-            ("ic_basilisk_toolkit", "toolkit_version"),
-            ("ic_python_db", "ic_python_db_version"),
-            ("ic_python_logging", "ic_python_logging_version"),
-        ]:
-            try:
-                mod = __import__(mod_name)
-                result[key] = getattr(mod, "__version__", "")
-            except Exception:
-                result[key] = ""
+    except Exception:
+        pass
 
     # Canister deploy timestamp (set during init/post_upgrade)
-    try:
-        from main import _deploy_timestamp_ns
-        if _deploy_timestamp_ns:
-            result["deployed_at_ns"] = _deploy_timestamp_ns
-    except (ImportError, AttributeError):
-        pass
+    if _deploy_timestamp_ns is not None:
+        result["deployed_at_ns"] = _deploy_timestamp_ns
 
     return json.dumps(result)
 

@@ -521,9 +521,6 @@ window.toggleLogin = async function () {
 // ---------------------------------------------------------------------------
 
 (async function boot() {
-  const ft = $("footer-time");
-  if (ft) ft.textContent = new Date().toISOString().replace("T", " ").slice(0, 19) + "Z";
-
   // Update default amount when token changes
   const tokenSel = $("input-token");
   if (tokenSel) {

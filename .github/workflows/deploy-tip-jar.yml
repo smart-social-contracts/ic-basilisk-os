@@ -56,7 +56,7 @@ jobs:
             - name: Install basilisk + toolkit
               run: |
                   pip install "ic-basilisk"
-                  pip install -e .
+                  pip install .
 
             - name: Pre-download canister template
               run: |

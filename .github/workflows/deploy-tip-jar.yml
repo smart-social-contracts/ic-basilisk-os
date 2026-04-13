@@ -67,6 +67,59 @@ jobs:
                     -o "$TEMPLATE_DIR/cpython_canister_template.wasm"
                   echo "Template cached at $TEMPLATE_DIR/cpython_canister_template.wasm ($(du -sh "$TEMPLATE_DIR/cpython_canister_template.wasm" | cut -f1))"
 
+            - name: Generate build info
+              run: |
+                  python3 - <<'PYEOF'
+                  import json, subprocess, datetime
+
+                  ORG = "smart-social-contracts"
+                  PACKAGES = {
+                      "basilisk":          {"repo": "basilisk",          "module": "basilisk"},
+                      "toolkit":           {"repo": "ic-basilisk-toolkit", "module": "ic_basilisk_toolkit"},
+                      "ic_python_db":      {"repo": "ic-python-db",      "module": "ic_python_db"},
+                      "ic_python_logging": {"repo": "ic-python-logging", "module": "ic_python_logging"},
+                  }
+
+                  info = {}
+                  for key, pkg in PACKAGES.items():
+                      # Get version from installed package
+                      try:
+                          ver = subprocess.check_output(
+                              ["python3", "-c", f"import {pkg['module']}; print({pkg['module']}.__version__)"],
+                              text=True,
+                          ).strip()
+                      except Exception:
+                          ver = "unknown"
+
+                      # Get latest commit from GitHub API
+                      commit_hash = ""
+                      commit_date = ""
+                      try:
+                          raw = subprocess.check_output(
+                              ["curl", "-sf", f"https://api.github.com/repos/{ORG}/{pkg['repo']}/commits/main"],
+                              text=True,
+                          )
+                          data = json.loads(raw)
+                          commit_hash = data["sha"][:8]
+                          commit_date = data["commit"]["committer"]["date"]
+                      except Exception:
+                          pass
+
+                      info[key] = {"version": ver, "commit": commit_hash, "date": commit_date}
+
+                  # CPython version
+                  import sys
+                  info["cpython"] = sys.version.split()[0]
+
+                  # Build timestamp
+                  info["built_at"] = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+                  out = "# Auto-generated at build time — do not edit\nBUILD_INFO = " + json.dumps(info, indent=4) + "\n"
+                  with open("templates/tip_jar/src/backend/_build_info.py", "w") as f:
+                      f.write(out)
+                  print(out)
+                  PYEOF
+
             - name: Build backend WASM
               working-directory: templates/tip_jar
               run: |

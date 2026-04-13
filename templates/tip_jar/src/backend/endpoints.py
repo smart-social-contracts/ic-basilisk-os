@@ -153,14 +153,38 @@ def get_fx_rates() -> text:
 
 @query
 def status() -> text:
-    """Health check endpoint — returns JSON with version info."""
+    """Health check endpoint — returns JSON with version + build info."""
+    import sys
     import basilisk
     import ic_basilisk_toolkit
-    return json.dumps({
+    import ic_python_db
+    import ic_python_logging
+
+    result = {
         "status": "ok",
+        "cpython": sys.version.split()[0],
         "basilisk_version": basilisk.__version__,
         "toolkit_version": ic_basilisk_toolkit.__version__,
-    })
+        "ic_python_db_version": ic_python_db.__version__,
+        "ic_python_logging_version": ic_python_logging.__version__,
+    }
+
+    # Merge build-time metadata (commit hashes, dates, deploy timestamp)
+    try:
+        from _build_info import BUILD_INFO
+        result["build"] = BUILD_INFO
+    except ImportError:
+        pass
+
+    # Canister deploy timestamp (set during init/post_upgrade)
+    try:
+        from main import _deploy_timestamp_ns
+        if _deploy_timestamp_ns:
+            result["deployed_at_ns"] = _deploy_timestamp_ns
+    except (ImportError, AttributeError):
+        pass
+
+    return json.dumps(result)
 
 
 @query

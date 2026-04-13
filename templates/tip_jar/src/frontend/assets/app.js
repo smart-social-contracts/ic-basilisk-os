@@ -539,13 +539,89 @@ window.toggleLogin = async function () {
     if (addrEl) addrEl.textContent = cid;
     await checkAuth();
     await refreshAll();
-    // Fetch version info for footer
-    try {
-      const a = await getActor();
-      const raw = await a.status();
-      const s = JSON.parse(raw);
-      const ver = $("footer-version");
-      if (ver && s.basilisk_version) ver.textContent = `basilisk v${s.basilisk_version}`;
-    } catch (e) { console.error("footer version:", e); }
+    await fetchBuildInfo();
   }
 })();
+
+// ---------------------------------------------------------------------------
+// Build info
+// ---------------------------------------------------------------------------
+
+function fmtDate(iso) {
+  if (!iso) return "—";
+  return iso.replace("T", " ").replace("Z", "").slice(0, 19) + "Z";
+}
+
+function nsToDate(ns) {
+  if (!ns) return "—";
+  return new Date(Number(BigInt(ns) / BigInt(1_000_000))).toISOString().replace("T", " ").slice(0, 19) + "Z";
+}
+
+async function fetchBuildInfo() {
+  try {
+    const a = await getActor();
+    const raw = await a.status();
+    const s = JSON.parse(raw);
+
+    // Update footer
+    const ver = $("footer-version");
+    if (ver && s.basilisk_version) ver.textContent = `basilisk v${s.basilisk_version}`;
+
+    // Build the table rows
+    const b = s.build || {};
+    const rows = [];
+
+    rows.push({
+      name: "CPython",
+      version: s.cpython || b.cpython || "—",
+      commit: "", date: "",
+    });
+    rows.push({
+      name: "basilisk",
+      version: s.basilisk_version || "—",
+      commit: b.basilisk?.commit || "",
+      date: fmtDate(b.basilisk?.date),
+    });
+    rows.push({
+      name: "ic-basilisk-toolkit",
+      version: s.toolkit_version || "—",
+      commit: b.toolkit?.commit || "",
+      date: fmtDate(b.toolkit?.date),
+    });
+    rows.push({
+      name: "ic-python-db",
+      version: s.ic_python_db_version || "—",
+      commit: b.ic_python_db?.commit || "",
+      date: fmtDate(b.ic_python_db?.date),
+    });
+    rows.push({
+      name: "ic-python-logging",
+      version: s.ic_python_logging_version || "—",
+      commit: b.ic_python_logging?.commit || "",
+      date: fmtDate(b.ic_python_logging?.date),
+    });
+
+    // Deploy datetime
+    const deployedAt = s.deployed_at_ns ? nsToDate(s.deployed_at_ns) : (b.built_at ? fmtDate(b.built_at) : "—");
+    rows.push({
+      name: "Canister deployed",
+      version: "", commit: "",
+      date: deployedAt,
+    });
+
+    const tbody = $("build-info-body");
+    tbody.innerHTML = rows.map(r =>
+      `<tr>
+        <td><strong>${esc(r.name)}</strong></td>
+        <td>${esc(r.version)}</td>
+        <td class="mono">${esc(r.commit)}</td>
+        <td class="mono">${esc(r.date)}</td>
+      </tr>`
+    ).join("");
+
+  } catch (e) {
+    console.error("fetchBuildInfo:", e);
+    const tbody = $("build-info-body");
+    if (tbody) tbody.innerHTML = `<tr><td colspan="4" class="empty">Failed to load</td></tr>`;
+  }
+}

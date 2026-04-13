@@ -30,6 +30,7 @@ dmypy.json
 # Internet Computer / Basilisk
 .dfx/
 .basilisk/
+_build_info.py
 
 # IDEs and editors
 .idea/

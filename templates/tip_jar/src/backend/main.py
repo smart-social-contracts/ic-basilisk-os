@@ -170,9 +170,14 @@ def _ensure_fx_task():
 # Step 7: Lifecycle hooks
 # ---------------------------------------------------------------------------
 
+_deploy_timestamp_ns = None
+
+
 @init
 def on_init():
     """Called once when the canister is first installed."""
+    global _deploy_timestamp_ns
+    _deploy_timestamp_ns = ic.time()
     _log.info("Tip Jar canister initialized!")
     _ensure_fx_task()
 
@@ -180,5 +185,7 @@ def on_init():
 @post_upgrade
 def on_post_upgrade():
     """Called after every canister upgrade (code redeploy)."""
+    global _deploy_timestamp_ns
+    _deploy_timestamp_ns = ic.time()
     _log.info("Tip Jar canister upgraded!")
     _ensure_fx_task()

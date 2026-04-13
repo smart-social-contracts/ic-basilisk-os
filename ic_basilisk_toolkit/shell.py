@@ -15,6 +15,7 @@ Shell commands:
     %ls [path]    List canister filesystem
     %cat <file>   Show file contents on canister
     %mkdir <path> Create directory on canister
+    %df           Show persistent file store usage and limits
     %wget <url> <dest>  Download a URL into canister filesystem
     %task         Task management (create, add-step, start, stop, etc.)
     %run <file>   Execute a file from canister filesystem
@@ -824,6 +825,33 @@ def _fs_mkdir_code(path: str) -> str:
         "import os\n"
         f"os.makedirs('{esc}', exist_ok=True)\n"
         f"print('Created: {esc}')\n"
+    )
+
+
+def _fs_df_code() -> str:
+    """Code for: %df — show persistent file store usage and limits."""
+    return (
+        "from basilisk import fs_stats as _fs_stats\n"
+        "_s = _fs_stats()\n"
+        "_fp = _s['files'] * 100.0 / _s['max_files'] if _s['max_files'] else 0\n"
+        "_sp = _s['total_bytes'] * 100.0 / _s['max_total_bytes'] if _s['max_total_bytes'] else 0\n"
+        "def _fmt(b):\n"
+        "    if b >= 1_000_000: return f'{b/1_000_000:.1f} MB'\n"
+        "    if b >= 1_000: return f'{b/1_000:.1f} KB'\n"
+        "    return f'{b} B'\n"
+        "print('Persistent File Store (stable memory 254)')\n"
+        "print('-' * 42)\n"
+        "print(f\"Files:    {_s['files']} / {_s['max_files']}      ({_fp:.1f}%)\")\n"
+        "print(f\"Size:     {_fmt(_s['total_bytes'])} / {_fmt(_s['max_total_bytes'])}  ({_sp:.1f}%)\")\n"
+        "if _s['largest_path']:\n"
+        "    print(f\"Largest:  {_fmt(_s['largest_bytes'])}  ({_s['largest_path']})\")\n"
+        "print(f\"Per-file limit:  {_fmt(_s['max_file_bytes'])}\")\n"
+        "if _fp >= 90 or _sp >= 90:\n"
+        "    print('Status:   near capacity')\n"
+        "elif _fp >= 75 or _sp >= 75:\n"
+        "    print('Status:   moderate')\n"
+        "else:\n"
+        "    print('Status:   healthy')\n"
     )
 
 
@@ -4121,6 +4149,8 @@ def _handle_magic(line: str, canister: str, network: str) -> str:
         if not path:
             return "Usage: %mkdir <path>"
         return canister_exec(_fs_mkdir_code(path), canister, network)
+    if stripped == "%df":
+        return canister_exec(_fs_df_code(), canister, network)
 
     # %wget <url> <dest> — download a file from URL into canister filesystem
     if stripped.startswith("%wget "):
@@ -4248,6 +4278,8 @@ FILESYSTEM
       Python: print(open(file).read())
   %mkdir <path>            Create directory
       Python: os.makedirs(path, exist_ok=True)
+  %df                      Show persistent file store usage and limits
+      Python: from basilisk import fs_stats; fs_stats()
   %wget <url> <dest>       Download URL to canister
   %run <file>              Execute Python file in canister
       Python: exec(open(file).read())""",
@@ -4348,7 +4380,7 @@ def _print_help(topic=None):
     print("""
 BASILISK SHELL \u2014 :help [topic] for details
 
-  fs       Filesystem (%ls, %cat, %mkdir, %wget, %run)
+  fs       Filesystem (%ls, %cat, %mkdir, %df, %wget, %run)
   task     Task management (%task create, start, stop, ...)
   db       Database (%db list, search, export, ...)
   wallet   Wallet (%wallet balance, transfer, ...)

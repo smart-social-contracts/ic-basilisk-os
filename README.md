@@ -1,19 +1,25 @@
 # ic-basilisk-toolkit
 
-**Basilisk Toolkit** — Services, interactive shell, and SFTP for [Basilisk](https://github.com/smart-social-contracts/basilisk) IC Python canisters.
+**Basilisk Toolkit** — A set of ready-made tools on top of the[Basilisk](https://github.com/smart-social-contracts/basilisk) CDK for IC Python canisters.
+
+**Live demo:** [https://ic-basilisk.tech/](https://ic-basilisk.tech/).
 
 ## Overview
 
-`ic-basilisk-toolkit` provides ready-made services on top of the Basilisk CDK:
+| Service | Description | Examples |
+|---|---|---|
+| **Task Management** | Create, schedule, and run background tasks | `%task create heartbeat every 60s --code "print('alive')"` / `Task(name="sync")` |
+| **Wallet** | ICRC-1 token registry, transfers, balance tracking | `%wallet balance` / `Wallet.transfer(token, to, amount)` |
+| **Encryption** | vetKeys + per-principal envelopes + groups | `%crypto encrypt "secret"` / `CryptoService.encrypt(data, recipients)` |
+| **FX** | Exchange rate queries via the IC XRC canister | `%fx ICP/USD` / `FXService.get_rate("ICP", "USD")` |
+| **Entities** | Persistent ORM via [ic-python-db](https://github.com/smart-social-contracts/ic-python-db) | `%db list User` / `User(name="alice").save()` |
+| **Logging** | Structured logging via [ic-python-logging](https://github.com/smart-social-contracts/ic-python-logging) | `logger.info("msg")` |
+| **HTTP Fetch** | Download a URL into the canister filesystem | `%wget https://example.com /data.txt` / `yield from wget(url, dest)` |
+| **File Transfer** | Move files between local machine and canister | `%get /app.py` / `%put script.py` |
+| **Interactive Shell** | REPL for live canister interaction | `basilisk-toolkit shell --canister my_app` |
+| **SFTP** | Browse and edit canister filesystem over SSH | `basilisk-toolkit sshd --canister my_app` |
 
-- **Task/Process Management** — `Task`, `TaskStep`, `TaskSchedule`, `TaskManager`
-- **Wallet** — ICRC-1 token registry, transfers, balance tracking, transaction sync
-- **Encryption** — vetKeys + per-principal envelopes + groups (`CryptoService`)
-- **FX** — Exchange rate queries via the IC XRC canister (`FXService`)
-- **Entities** — Persistent ORM entities via [ic-python-db](https://github.com/smart-social-contracts/ic-python-db)
-- **Logging** — Structured logging via [ic-python-logging](https://github.com/smart-social-contracts/ic-python-logging)
-- **Interactive Shell** — REPL for live canister interaction (`basilisk-toolkit shell`)
-- **SFTP** — Browse and edit canister filesystem over SSH (`basilisk-toolkit sshd`)
+Type `:help` inside the shell for full command reference, or see the [tip_jar template](templates/tip_jar) for a working example project.
 
 ## Installation
 
@@ -34,17 +40,6 @@ basilisk-toolkit shell --canister my_app --network ic      # Interactive shell
 basilisk-toolkit sshd --canister my_app --network ic       # SSH/SFTP server
 ```
 
-## Canister-Side Usage
-
-Inside your canister code:
-
-```python
-from ic_basilisk_toolkit import Task, TaskStep, Wallet, CryptoService
-
-# Create and schedule a task
-task = Task(name="sync_balances")
-TaskStep(task=task, name="fetch", code="wallet.refresh_all()")
-```
 
 ## Dependencies
 
@@ -52,16 +47,6 @@ TaskStep(task=task, name="fetch", code="wallet.refresh_all()")
 - [ic-python-db](https://github.com/smart-social-contracts/ic-python-db) — Persistent entity ORM
 - [ic-python-logging](https://github.com/smart-social-contracts/ic-python-logging) — Structured logging
 
-## Development
-
-```bash
-git clone https://github.com/smart-social-contracts/ic-basilisk-toolkit.git
-cd ic-basilisk-toolkit
-pip install -r requirements.txt
-pip install -r requirements-dev.txt
-pip install -e .
-pytest tests/ -v
-```
 
 ## License
 

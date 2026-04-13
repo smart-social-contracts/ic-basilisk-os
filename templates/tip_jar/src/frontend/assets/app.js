@@ -539,5 +539,13 @@ window.toggleLogin = async function () {
     if (addrEl) addrEl.textContent = cid;
     await checkAuth();
     await refreshAll();
+    // Fetch version info for footer
+    try {
+      const a = await getActor();
+      const raw = await a.status();
+      const s = JSON.parse(raw);
+      const ver = $("footer-version");
+      if (ver && s.basilisk_version) ver.textContent = `basilisk v${s.basilisk_version}`;
+    } catch (e) { console.error("footer version:", e); }
   }
 })();

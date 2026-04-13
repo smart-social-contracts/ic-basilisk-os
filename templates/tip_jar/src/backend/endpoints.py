@@ -153,8 +153,14 @@ def get_fx_rates() -> text:
 
 @query
 def status() -> text:
-    """Health check endpoint."""
-    return "ok"
+    """Health check endpoint — returns JSON with version info."""
+    import basilisk
+    import ic_basilisk_toolkit
+    return json.dumps({
+        "status": "ok",
+        "basilisk_version": basilisk.__version__,
+        "toolkit_version": ic_basilisk_toolkit.__version__,
+    })
 
 
 @query

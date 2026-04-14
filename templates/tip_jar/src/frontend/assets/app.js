@@ -112,6 +112,16 @@ window.copyAddress = async function () {
   } catch (e) { console.error("Copy failed:", e); }
 };
 
+window.copyShellCmd = async function () {
+  const cmd = $("shell-cmd")?.textContent;
+  if (!cmd) return;
+  try {
+    await navigator.clipboard.writeText(cmd);
+    const btn = $("shell-cmd").nextElementSibling;
+    if (btn) { const orig = btn.innerHTML; btn.textContent = "✓"; setTimeout(() => btn.innerHTML = orig, 1500); }
+  } catch (e) { console.error("Copy failed:", e); }
+};
+
 function truncPrincipal(p) {
   if (!p || p.length < 20) return p || "";
   return p.slice(0, 5) + "…" + p.slice(-3);
@@ -532,6 +542,8 @@ window.toggleLogin = async function () {
   const cid = await detectBackendCanisterId();
   if (!cid.startsWith("__")) {
     $("canister-id").textContent = cid;
+    const shellCmd = $("shell-cmd");
+    if (shellCmd) shellCmd.textContent = `basilisk --shell ${cid} --network ic`;
     const addrEl = $("canister-address");
     if (addrEl) addrEl.textContent = cid;
     await checkAuth();

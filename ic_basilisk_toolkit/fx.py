@@ -266,7 +266,7 @@ class FXService:
                     data = raw["Ok"]
                     pair.rate = data["rate"]
                     pair.decimals = data["metadata"]["decimals"]
-                    pair.last_updated = now
+                    pair.last_updated = data.get("timestamp", now)
                     pair.last_error = ""
                     human = data["rate"] / (10 ** data["metadata"]["decimals"])
                     results.append(f"{pair.name}={human}")
@@ -274,20 +274,17 @@ class FXService:
                 elif isinstance(raw, dict) and "Err" in raw:
                     err_msg = str(raw["Err"])[:255]
                     pair.last_error = err_msg
-                    pair.last_updated = now
                     results.append(f"{pair.name}=ERR:{err_msg}")
                     logger.error(f"XRC error for {pair.name}: {err_msg}")
                 else:
                     err_msg = str(raw)[:255]
                     pair.last_error = err_msg
-                    pair.last_updated = now
                     results.append(f"{pair.name}=ERR:{err_msg}")
                     logger.error(f"Unexpected XRC response for {pair.name}: {err_msg}")
 
             except Exception as e:
                 err_msg = str(e)[:255]
                 pair.last_error = err_msg
-                pair.last_updated = now
                 results.append(f"{pair.name}=ERR:{err_msg}")
                 logger.error(
                     f"Exception refreshing {pair.name}: {traceback.format_exc()}"
@@ -353,7 +350,7 @@ class FXService:
                 data = raw["Ok"]
                 pair.rate = data["rate"]
                 pair.decimals = data["metadata"]["decimals"]
-                pair.last_updated = now
+                pair.last_updated = data.get("timestamp", now)
                 pair.last_error = ""
                 human = data["rate"] / (10 ** data["metadata"]["decimals"])
                 logger.info(f"Fetched {name}: {human}")
@@ -361,18 +358,15 @@ class FXService:
             elif isinstance(raw, dict) and "Err" in raw:
                 err_msg = str(raw["Err"])[:255]
                 pair.last_error = err_msg
-                pair.last_updated = now
                 logger.error(f"XRC error for {name}: {err_msg}")
                 return None
             else:
                 err_msg = str(raw)[:255]
                 pair.last_error = err_msg
-                pair.last_updated = now
                 logger.error(f"Unexpected XRC response for {name}: {err_msg}")
                 return None
 
         except Exception as e:
             pair.last_error = str(e)[:255]
-            pair.last_updated = now
             logger.error(f"Exception fetching {name}: {traceback.format_exc()}")
             return None

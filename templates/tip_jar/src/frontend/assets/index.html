@@ -210,6 +210,13 @@
           <span style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted)">Backend Canister</span>
           <code id="canister-id" style="display:block;margin-top:.25rem;padding:.4rem .6rem;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:.85rem;word-break:break-all"></code>
         </div>
+        <div style="margin-bottom:1rem">
+          <span style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted)">Connect via Shell</span>
+          <div style="display:flex;align-items:center;gap:.4rem;margin-top:.25rem">
+            <code id="shell-cmd" style="flex:1;padding:.4rem .6rem;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:.85rem;word-break:break-all"></code>
+            <button onclick="copyShellCmd()" title="Copy to clipboard" style="padding:.4rem .5rem;background:var(--bg);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:.85rem;line-height:1">&#128203;</button>
+          </div>
+        </div>
         <div class="info-grid">
           <button onclick="callWhoami()">Who Am I?</button>
           <button onclick="callStatus()">Health Check</button>

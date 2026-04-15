@@ -44,6 +44,9 @@ deploy = "ic_basilisk_toolkit.cli:plugin_deploy"
 upgrade = "ic_basilisk_toolkit.cli:plugin_upgrade"
 versions = "ic_basilisk_toolkit.cli:plugin_versions"
 deployments = "ic_basilisk_toolkit.cli:plugin_deployments"
+install-extension = "ic_basilisk_toolkit.cli:plugin_install_extension"
+uninstall-extension = "ic_basilisk_toolkit.cli:plugin_uninstall_extension"
+list-extensions = "ic_basilisk_toolkit.cli:plugin_list_extensions"
 
 [project.urls]
 Homepage = "https://github.com/smart-social-contracts/ic-basilisk-toolkit"

@@ -12,6 +12,10 @@ Commands:
   versions         List available WASM versions on the deployer
   deployments      List deployment history
 
+  install-extension    Install a runtime extension on a realm canister
+  uninstall-extension  Uninstall a runtime extension from a realm canister
+  list-extensions      List runtime-installed extensions on a realm canister
+
 Options (exec, shell, sshd):
   --canister <id>   Canister name or principal ID  [auto-detect from dfx.json]
   --network <net>   Network: local, ic, or URL     [default: local]
@@ -210,6 +214,21 @@ def main():
 
         cmd_deployments(sys.argv[2:])
 
+    elif command == "install-extension":
+        from ic_basilisk_toolkit.realm import cmd_install_extension
+
+        cmd_install_extension(sys.argv[2:])
+
+    elif command == "uninstall-extension":
+        from ic_basilisk_toolkit.realm import cmd_uninstall_extension
+
+        cmd_uninstall_extension(sys.argv[2:])
+
+    elif command == "list-extensions":
+        from ic_basilisk_toolkit.realm import cmd_list_extensions
+
+        cmd_list_extensions(sys.argv[2:])
+
     elif command in ("-h", "--help", "help"):
         print(__doc__.strip())
 
@@ -280,6 +299,27 @@ def plugin_deployments():
     from ic_basilisk_toolkit.deployer import cmd_deployments
 
     cmd_deployments(sys.argv[2:])
+
+
+def plugin_install_extension():
+    """basilisk install-extension — Install a runtime extension on a realm canister."""
+    from ic_basilisk_toolkit.realm import cmd_install_extension
+
+    cmd_install_extension(sys.argv[2:])
+
+
+def plugin_uninstall_extension():
+    """basilisk uninstall-extension — Uninstall a runtime extension."""
+    from ic_basilisk_toolkit.realm import cmd_uninstall_extension
+
+    cmd_uninstall_extension(sys.argv[2:])
+
+
+def plugin_list_extensions():
+    """basilisk list-extensions — List runtime-installed extensions."""
+    from ic_basilisk_toolkit.realm import cmd_list_extensions
+
+    cmd_list_extensions(sys.argv[2:])
 
 
 if __name__ == "__main__":

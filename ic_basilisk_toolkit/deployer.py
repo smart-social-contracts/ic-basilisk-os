@@ -162,8 +162,11 @@ def _format_timestamp(ns):
         return "—"
     try:
         from datetime import datetime, timezone
+
         ts = int(ns) / 1e9
-        return datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+        return datetime.fromtimestamp(ts, tz=timezone.utc).strftime(
+            "%Y-%m-%d %H:%M UTC"
+        )
     except Exception:
         return str(ns)
 
@@ -206,7 +209,10 @@ def cmd_deploy(args):
 
     if not version:
         print("Error: --version is required", file=sys.stderr)
-        print("Usage: basilisk deploy --version <ver> [--controllers p1,p2] [--cycles N]", file=sys.stderr)
+        print(
+            "Usage: basilisk deploy --version <ver> [--controllers p1,p2] [--cycles N]",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     # Build JSON payload
@@ -230,7 +236,9 @@ def cmd_deploy(args):
         print(f"  Cycles:     {cycles:,}")
     print()
 
-    raw = _dfx_call(deployer, "deploy", f'("{payload_json}")', network, identity, timeout=600)
+    raw = _dfx_call(
+        deployer, "deploy", f'("{payload_json}")', network, identity, timeout=600
+    )
 
     try:
         result = json.loads(raw)
@@ -241,7 +249,10 @@ def cmd_deploy(args):
     if "error" in result:
         print(f"Error: {result['error']}", file=sys.stderr)
         if "canister_id" in result:
-            print(f"  (partially created canister: {result['canister_id']})", file=sys.stderr)
+            print(
+                f"  (partially created canister: {result['canister_id']})",
+                file=sys.stderr,
+            )
         sys.exit(1)
 
     print(f"✅ Canister deployed successfully!")
@@ -274,10 +285,14 @@ def cmd_upgrade(args):
 
     if not canister or not version:
         print("Error: --canister and --version are required", file=sys.stderr)
-        print("Usage: basilisk upgrade --canister <id> --version <ver>", file=sys.stderr)
+        print(
+            "Usage: basilisk upgrade --canister <id> --version <ver>", file=sys.stderr
+        )
         sys.exit(1)
 
-    payload = json.dumps({"canister_id": canister, "version": version}).replace('"', '\\"')
+    payload = json.dumps({"canister_id": canister, "version": version}).replace(
+        '"', '\\"'
+    )
 
     print(f"Upgrading canister...")
     print(f"  Canister:   {canister}")
@@ -286,7 +301,9 @@ def cmd_upgrade(args):
     print(f"  Network:    {network}")
     print()
 
-    raw = _dfx_call(deployer, "upgrade", f'("{payload}")', network, identity, timeout=600)
+    raw = _dfx_call(
+        deployer, "upgrade", f'("{payload}")', network, identity, timeout=600
+    )
 
     try:
         result = json.loads(raw)
@@ -345,7 +362,9 @@ def cmd_deployments(args):
 
     deployer, network, identity, raw_json, _ = _parse_common_args(args)
 
-    raw = _dfx_call(deployer, "list_deployments", "()", network, identity, is_query=True)
+    raw = _dfx_call(
+        deployer, "list_deployments", "()", network, identity, is_query=True
+    )
 
     try:
         deployments = json.loads(raw)

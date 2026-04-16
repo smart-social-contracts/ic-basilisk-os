@@ -1,13 +1,21 @@
-# Deploy Tip Jar — build and deploy the tip jar template to IC mainnet.
+# Deploy Template — build and deploy a basilisk toolkit template to IC mainnet.
 #
-# Triggered manually. Choose between reinstall (wipes state) and upgrade
-# (preserves stable memory / StableBTreeMap data).
+# Triggered manually. Choose which template(s) to deploy and the install mode.
 
-name: Deploy Tip Jar
+name: Deploy Template
 
 on:
     workflow_dispatch:
         inputs:
+            template:
+                description: "Template to deploy"
+                required: true
+                type: choice
+                options:
+                    - tip_jar
+                    - file_registry
+                    - all
+                default: tip_jar
             mode:
                 description: "Install mode"
                 required: true
@@ -20,9 +28,11 @@ on:
 env:
     PYTHON_VERSION: "3.13"
     DFX_VERSION: "0.30.2"
-    BACKEND_CANISTER_ID: o6z3g-eiaaa-aaaau-agj6q-cai
-    FRONTEND_CANISTER_ID: ox2q2-saaaa-aaaau-agj7a-cai
     NETWORK: ic
+    TIP_JAR_BACKEND_CANISTER_ID: o6z3g-eiaaa-aaaau-agj6q-cai
+    TIP_JAR_FRONTEND_CANISTER_ID: ox2q2-saaaa-aaaau-agj7a-cai
+    FILE_REGISTRY_BACKEND_CANISTER_ID: od2mb-wyaaa-aaaac-qgmza-cai
+    FILE_REGISTRY_FRONTEND_CANISTER_ID: oe3kv-3aaaa-aaaac-qgmzq-cai
 
 jobs:
     deploy:
@@ -67,7 +77,10 @@ jobs:
                     -o "$TEMPLATE_DIR/cpython_canister_template.wasm"
                   echo "Template cached at $TEMPLATE_DIR/cpython_canister_template.wasm ($(du -sh "$TEMPLATE_DIR/cpython_canister_template.wasm" | cut -f1))"
 
-            - name: Generate build info
+            # ── tip_jar ──────────────────────────────────────────────────────
+
+            - name: Generate build info (tip_jar)
+              if: ${{ inputs.template == 'tip_jar' || inputs.template == 'all' }}
               run: |
                   python3 - <<'PYEOF'
                   import json, subprocess, datetime
@@ -82,7 +95,6 @@ jobs:
 
                   info = {}
                   for key, pkg in PACKAGES.items():
-                      # Get version from installed package
                       try:
                           ver = subprocess.check_output(
                               ["python3", "-c", f"import {pkg['module']}; print({pkg['module']}.__version__)"],
@@ -91,7 +103,6 @@ jobs:
                       except Exception:
                           ver = "unknown"
 
-                      # Get latest commit from GitHub API
                       commit_hash = ""
                       commit_date = ""
                       try:
@@ -107,11 +118,8 @@ jobs:
 
                       info[key] = {"version": ver, "commit": commit_hash, "date": commit_date}
 
-                  # CPython version
                   import sys
                   info["cpython"] = sys.version.split()[0]
-
-                  # Build timestamp
                   info["built_at"] = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
                   out = "# Auto-generated at build time — do not edit\nBUILD_INFO = " + json.dumps(info, indent=4) + "\n"
@@ -120,47 +128,89 @@ jobs:
                   print(out)
                   PYEOF
 
-            - name: Build backend WASM
+            - name: Build backend WASM (tip_jar)
+              if: ${{ inputs.template == 'tip_jar' || inputs.template == 'all' }}
               working-directory: templates/tip_jar
               run: |
                   CANISTER_CANDID_PATH=./tip_jar_backend.did python -m basilisk tip_jar_backend src/backend/main.py
                   ls -la .basilisk/tip_jar_backend/tip_jar_backend.wasm
 
-            - name: Deploy backend (${{ inputs.mode }})
+            - name: Deploy backend (tip_jar, ${{ inputs.mode }})
+              if: ${{ inputs.template == 'tip_jar' || inputs.template == 'all' }}
               working-directory: templates/tip_jar
+              env:
+                  BACKEND_CANISTER_ID: ${{ env.TIP_JAR_BACKEND_CANISTER_ID }}
               run: |
                   MODE="${{ inputs.mode }}"
-                  echo "Deploying backend with --mode $MODE ..."
-
                   if [ "$MODE" = "reinstall" ]; then
                       echo "Stopping canister $BACKEND_CANISTER_ID..."
                       dfx canister stop "$BACKEND_CANISTER_ID" --network "$NETWORK" 2>/dev/null || true
                       sleep 3
                   fi
-
                   dfx canister install "$BACKEND_CANISTER_ID" \
-                      --mode "$MODE" \
-                      --yes \
-                      --network "$NETWORK" \
+                      --mode "$MODE" --yes --network "$NETWORK" \
                       --wasm .basilisk/tip_jar_backend/tip_jar_backend.wasm
-
                   if [ "$MODE" = "reinstall" ]; then
                       dfx canister start "$BACKEND_CANISTER_ID" --network "$NETWORK"
                   fi
+                  dfx canister call "$BACKEND_CANISTER_ID" status --network "$NETWORK" || echo "⚠️ status call failed"
 
-                  echo "Verifying backend is reachable..."
-                  dfx canister call "$BACKEND_CANISTER_ID" status --network "$NETWORK" || echo "⚠️ status call failed (may need a second deploy if post_upgrade had stale code)"
-
-            - name: Deploy frontend
+            - name: Deploy frontend (tip_jar)
+              if: ${{ inputs.template == 'tip_jar' || inputs.template == 'all' }}
               working-directory: templates/tip_jar
               run: |
                   dfx deploy tip_jar_frontend --network "$NETWORK" --upgrade-unchanged
-                  echo "Frontend: https://$FRONTEND_CANISTER_ID.icp0.io"
+                  echo "Frontend: https://$TIP_JAR_FRONTEND_CANISTER_ID.icp0.io"
+
+            # ── file_registry ────────────────────────────────────────────────
+
+            - name: Build backend WASM (file_registry)
+              if: ${{ inputs.template == 'file_registry' || inputs.template == 'all' }}
+              working-directory: templates/file_registry
+              run: |
+                  CANISTER_CANDID_PATH=./ic_file_registry.did python3 -m basilisk ic_file_registry src/main.py
+                  ls -la .basilisk/ic_file_registry/ic_file_registry.wasm
+
+            - name: Deploy backend (file_registry, ${{ inputs.mode }})
+              if: ${{ inputs.template == 'file_registry' || inputs.template == 'all' }}
+              working-directory: templates/file_registry
+              env:
+                  BACKEND_CANISTER_ID: ${{ env.FILE_REGISTRY_BACKEND_CANISTER_ID }}
+              run: |
+                  MODE="${{ inputs.mode }}"
+                  if [ "$MODE" = "reinstall" ]; then
+                      echo "Stopping canister $BACKEND_CANISTER_ID..."
+                      dfx canister stop "$BACKEND_CANISTER_ID" --network "$NETWORK" 2>/dev/null || true
+                      sleep 3
+                  fi
+                  dfx canister install "$BACKEND_CANISTER_ID" \
+                      --mode "$MODE" --yes --network "$NETWORK" \
+                      --wasm .basilisk/ic_file_registry/ic_file_registry.wasm
+                  if [ "$MODE" = "reinstall" ]; then
+                      dfx canister start "$BACKEND_CANISTER_ID" --network "$NETWORK"
+                  fi
+                  dfx canister call "$BACKEND_CANISTER_ID" status --network "$NETWORK" || echo "⚠️ status call failed"
+
+            - name: Deploy frontend (file_registry)
+              if: ${{ inputs.template == 'file_registry' || inputs.template == 'all' }}
+              working-directory: templates/file_registry
+              run: |
+                  dfx deploy ic_file_registry_frontend --network "$NETWORK" --upgrade-unchanged
+                  echo "Frontend: https://$FILE_REGISTRY_FRONTEND_CANISTER_ID.icp0.io"
+
+            # ── summary ──────────────────────────────────────────────────────
 
             - name: Summary
               run: |
-                  echo "## Tip Jar Deployment" >> $GITHUB_STEP_SUMMARY
+                  echo "## Template Deployment" >> $GITHUB_STEP_SUMMARY
                   echo "" >> $GITHUB_STEP_SUMMARY
+                  echo "- **Template**: ${{ inputs.template }}" >> $GITHUB_STEP_SUMMARY
                   echo "- **Mode**: ${{ inputs.mode }}" >> $GITHUB_STEP_SUMMARY
-                  echo "- **Backend**: [$BACKEND_CANISTER_ID](https://dashboard.internetcomputer.org/canister/$BACKEND_CANISTER_ID)" >> $GITHUB_STEP_SUMMARY
-                  echo "- **Frontend**: [https://$FRONTEND_CANISTER_ID.icp0.io](https://$FRONTEND_CANISTER_ID.icp0.io)" >> $GITHUB_STEP_SUMMARY
+                  if [[ "${{ inputs.template }}" == "tip_jar" || "${{ inputs.template }}" == "all" ]]; then
+                      echo "- **tip_jar backend**: [$TIP_JAR_BACKEND_CANISTER_ID](https://dashboard.internetcomputer.org/canister/$TIP_JAR_BACKEND_CANISTER_ID)" >> $GITHUB_STEP_SUMMARY
+                      echo "- **tip_jar frontend**: [https://$TIP_JAR_FRONTEND_CANISTER_ID.icp0.io](https://$TIP_JAR_FRONTEND_CANISTER_ID.icp0.io)" >> $GITHUB_STEP_SUMMARY
+                  fi
+                  if [[ "${{ inputs.template }}" == "file_registry" || "${{ inputs.template }}" == "all" ]]; then
+                      echo "- **file_registry backend**: [$FILE_REGISTRY_BACKEND_CANISTER_ID](https://dashboard.internetcomputer.org/canister/$FILE_REGISTRY_BACKEND_CANISTER_ID)" >> $GITHUB_STEP_SUMMARY
+                      echo "- **file_registry frontend**: [https://$FILE_REGISTRY_FRONTEND_CANISTER_ID.icp0.io](https://$FILE_REGISTRY_FRONTEND_CANISTER_ID.icp0.io)" >> $GITHUB_STEP_SUMMARY
+                  fi

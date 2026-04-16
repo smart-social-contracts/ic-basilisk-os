@@ -1,0 +1,8 @@
+[
+  {
+    // Apply the DFINITY-recommended hardened security headers (CSP, HSTS, etc.)
+    // to every asset served by this canister.
+    match: "**/*",
+    security_policy: "standard",
+  },
+]

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Basilisk — Python on the Internet Computer</title>
+  <meta name="description" content="Basilisk is an ICP Python Canister Development Kit. Write decentralized applications in Python on the Internet Computer." />
+  <link rel="icon" type="image/png" href="logo.png" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <!-- Hero -->
+    <header class="hero">
+      <img src="logo.png" alt="Basilisk" class="logo" />
+      <h1>Basilisk</h1>
+      <p class="tagline">Python on the Internet Computer.</p>
+      <p class="lede">
+        Write full-stack decentralized applications in <strong>Python</strong>,
+        compiled to WebAssembly and running inside <strong>canisters</strong> on
+        the <a href="https://internetcomputer.org" target="_blank" rel="noopener">Internet Computer</a>.
+        No servers, no cloud, no DNS hacks — the frontend, backend, and data all
+        live on-chain.
+      </p>
+      <div class="hero-actions">
+        <a class="btn" href="https://github.com/smart-social-contracts/basilisk" target="_blank" rel="noopener">GitHub</a>
+        <a class="btn btn-secondary" href="https://pypi.org/project/ic-basilisk/" target="_blank" rel="noopener">PyPI</a>
+      </div>
+    </header>
+
+    <!-- What is Basilisk -->
+    <section class="card">
+      <h2>What is Basilisk?</h2>
+      <p>
+        <a href="https://github.com/smart-social-contracts/basilisk" target="_blank" rel="noopener"><strong>Basilisk</strong></a>
+        is a Canister Development Kit (CDK) and application framework for writing
+        IC canisters in Python.
+      </p>
+      <ul class="feature-list">
+        <li><strong>CPython 3.13 → WASM</strong> — deploy in seconds with a pre-built template, no Rust toolchain needed.</li>
+        <li><strong>Near-complete standard library</strong> — <code>os</code>, <code>json</code>, <code>re</code>, <code>math</code>, <code>datetime</code>, <code>hashlib</code>, and more.</li>
+        <li><strong>Stable storage</strong> — <code>StableBTreeMap</code>, <code>StableVec</code>, <code>StableLog</code>, <code>StableCell</code>, <code>StableMinHeap</code> — data survives upgrades with no serialization step.</li>
+        <li><strong>Persistent filesystem</strong> — standard <code>open()</code> / <code>os</code> calls, automatically backed by stable memory.</li>
+        <li><strong>IC system APIs</strong> — <code>ic.caller()</code>, <code>ic.time()</code>, inter-canister calls, timers, Candid types.</li>
+      </ul>
+      <pre class="code"><span class="comment"># Install and scaffold a new project</span>
+pip install ic-basilisk
+basilisk new my-canister &amp;&amp; cd my-canister
+dfx start --background
+dfx deploy</pre>
+    </section>
+
+    <!-- What is the Toolkit -->
+    <section class="card">
+      <h2>What is the Toolkit?</h2>
+      <p>
+        <a href="https://github.com/smart-social-contracts/ic-basilisk-toolkit" target="_blank" rel="noopener"><strong>ic-basilisk-toolkit</strong></a>
+        is a set of ready-made tools built on top of Basilisk — drop-in modules
+        you can compose into your canister instead of writing them from scratch.
+      </p>
+      <div class="toolkit-grid">
+        <div class="toolkit-item"><span class="toolkit-name">Tasks</span><span class="toolkit-desc">Schedule and run background jobs</span></div>
+        <div class="toolkit-item"><span class="toolkit-name">Wallet</span><span class="toolkit-desc">ICRC-1 token registry, transfers, balances</span></div>
+        <div class="toolkit-item"><span class="toolkit-name">Crypto</span><span class="toolkit-desc">vetKeys encryption, per-principal envelopes, groups</span></div>
+        <div class="toolkit-item"><span class="toolkit-name">FX</span><span class="toolkit-desc">Exchange rates via the on-chain XRC canister</span></div>
+        <div class="toolkit-item"><span class="toolkit-name">HTTP</span><span class="toolkit-desc">HTTP outcalls with a simple client API</span></div>
+        <div class="toolkit-item"><span class="toolkit-name">Auth</span><span class="toolkit-desc">Role-based access control and guards</span></div>
+      </div>
+    </section>
+
+    <!-- Templates -->
+    <section class="card">
+      <h2>Templates</h2>
+      <p class="section-lede">
+        Live, open-source demos running entirely on-chain. Each is a full-stack
+        canister you can fork and deploy.
+      </p>
+      <div class="template-grid">
+
+        <a class="template" href="https://ox2q2-saaaa-aaaau-agj7a-cai.icp0.io/" target="_blank" rel="noopener">
+          <div class="template-head">
+            <h3>Tip Jar</h3>
+            <span class="template-arrow">&rarr;</span>
+          </div>
+          <p class="template-desc">
+            Accept crypto donations in ckBTC, ckETH, ckUSDC, and ICP.
+            Live exchange rates, encrypted messages, donor leaderboard.
+          </p>
+          <div class="template-tags">
+            <span class="tag">ICRC-1</span>
+            <span class="tag">XRC</span>
+            <span class="tag">vetKeys</span>
+            <span class="tag">Internet Identity</span>
+          </div>
+          <div class="template-meta">
+            <span class="meta-link">Live demo</span>
+            <span class="meta-link">
+              <a href="https://github.com/smart-social-contracts/ic-basilisk-toolkit/tree/main/templates/tip_jar" target="_blank" rel="noopener" onclick="event.stopPropagation()">Source</a>
+            </span>
+          </div>
+        </a>
+
+        <a class="template" href="https://oe3kv-3aaaa-aaaac-qgmzq-cai.icp0.io/" target="_blank" rel="noopener">
+          <div class="template-head">
+            <h3>File Registry</h3>
+            <span class="template-arrow">&rarr;</span>
+          </div>
+          <p class="template-desc">
+            General-purpose on-chain file storage with HTTP serving, CORS,
+            chunked upload for WASMs up to ~400&nbsp;MB, and per-namespace ACLs.
+          </p>
+          <div class="template-tags">
+            <span class="tag">HTTP</span>
+            <span class="tag">Stable memory</span>
+            <span class="tag">Chunked upload</span>
+            <span class="tag">ACL</span>
+          </div>
+          <div class="template-meta">
+            <span class="meta-link">Live demo</span>
+            <span class="meta-link">
+              <a href="https://github.com/smart-social-contracts/ic-basilisk-toolkit/tree/main/templates/file_registry" target="_blank" rel="noopener" onclick="event.stopPropagation()">Source</a>
+            </span>
+          </div>
+        </a>
+
+      </div>
+    </section>
+
+    <!-- Links -->
+    <section class="card">
+      <h2>Links</h2>
+      <div class="link-grid">
+        <a class="link" href="https://github.com/smart-social-contracts/basilisk" target="_blank" rel="noopener">
+          <span class="link-title">basilisk</span>
+          <span class="link-desc">CDK source on GitHub</span>
+        </a>
+        <a class="link" href="https://github.com/smart-social-contracts/ic-basilisk-toolkit" target="_blank" rel="noopener">
+          <span class="link-title">ic-basilisk-toolkit</span>
+          <span class="link-desc">Toolkit source on GitHub</span>
+        </a>
+        <a class="link" href="https://pypi.org/project/ic-basilisk/" target="_blank" rel="noopener">
+          <span class="link-title">ic-basilisk</span>
+          <span class="link-desc">Package on PyPI</span>
+        </a>
+        <a class="link" href="https://internetcomputer.org" target="_blank" rel="noopener">
+          <span class="link-title">Internet Computer</span>
+          <span class="link-desc">Learn about ICP</span>
+        </a>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    <a href="https://github.com/smart-social-contracts/basilisk" target="_blank" rel="noopener" class="footer-gh" title="GitHub">
+      <svg height="18" width="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+    </a>
+    <span class="footer-meta">basilisk &middot; served from a canister on the Internet Computer</span>
+  </footer>
+</body>
+</html>

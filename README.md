@@ -170,6 +170,17 @@ ssh -p 2222 localhost
 
 Type `:help` inside the shell for full command reference, or see the [tip_jar template](templates/tip_jar) for a working example project.
 
+## Templates
+
+Full-stack example canisters, each deployable as-is:
+
+- [**Tip Jar**](templates/tip_jar) — crypto donations in ckBTC / ckETH / ckUSDC / ICP with live exchange rates, encrypted messages, donor leaderboard. [Live](https://ox2q2-saaaa-aaaau-agj7a-cai.icp0.io/).
+- [**File Registry**](templates/file_registry) — general-purpose on-chain file storage with HTTP serving, CORS, chunked upload for large WASMs, and per-namespace ACLs. [Live](https://oe3kv-3aaaa-aaaac-qgmzq-cai.icp0.io/).
+
+## Website
+
+[`website/`](website/) is the static landing page at [ic-basilisk.tech](https://ic-basilisk.tech/) — it introduces basilisk and this toolkit and links out to the live template demos. Pure assets canister, no backend.
+
 ## Installation
 
 ```bash

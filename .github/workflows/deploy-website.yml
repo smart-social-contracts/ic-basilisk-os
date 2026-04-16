@@ -1,0 +1,61 @@
+# Deploy Website — build and deploy the basilisk landing page to IC mainnet.
+#
+# Triggered manually or automatically on pushes to main that touch website/.
+# First deploy must be done locally with `dfx deploy --network ic basilisk_website`
+# so the canister id gets written into website/canister_ids.json (commit that).
+# After that, CI upgrades in place.
+
+name: Deploy Website
+
+on:
+    workflow_dispatch:
+    push:
+        branches:
+            - main
+        paths:
+            - "website/**"
+            - ".github/workflows/deploy-website.yml"
+
+env:
+    DFX_VERSION: "0.30.2"
+    NETWORK: ic
+
+jobs:
+    deploy:
+        runs-on: ubuntu-latest
+        env:
+            DFX_WARNING: -mainnet_plaintext_identity
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Install dfx
+              run: |
+                  DFXVM_INIT_YES=true DFX_VERSION=${{ env.DFX_VERSION }} sh -ci "$(curl -fsSL https://sdk.dfinity.org/install.sh)"
+                  echo "$HOME/.local/share/dfx/bin" >> $GITHUB_PATH
+
+            - name: Import DFX identity
+              run: |
+                  echo "${{ secrets.IC_IDENTITY_PEM }}" > /tmp/ci-identity.pem
+                  dfx identity import ci-deploy /tmp/ci-identity.pem --storage-mode plaintext 2>/dev/null || true
+                  rm /tmp/ci-identity.pem
+                  dfx identity use ci-deploy
+
+            - name: Deploy website canister
+              working-directory: website
+              run: |
+                  if [ ! -f canister_ids.json ]; then
+                      echo "::error::website/canister_ids.json is missing. Run 'dfx deploy --network ic basilisk_website' locally once and commit canister_ids.json."
+                      exit 1
+                  fi
+                  dfx deploy basilisk_website --network "$NETWORK" --upgrade-unchanged
+                  CANISTER_ID=$(jq -r '.basilisk_website.ic' canister_ids.json)
+                  echo "CANISTER_ID=$CANISTER_ID" >> $GITHUB_ENV
+                  echo "Deployed: https://$CANISTER_ID.icp0.io"
+
+            - name: Summary
+              run: |
+                  echo "## Website Deployment" >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  echo "- **Canister**: [\`$CANISTER_ID\`](https://dashboard.internetcomputer.org/canister/$CANISTER_ID)" >> $GITHUB_STEP_SUMMARY
+                  echo "- **Raw URL**: [https://$CANISTER_ID.icp0.io](https://$CANISTER_ID.icp0.io)" >> $GITHUB_STEP_SUMMARY
+                  echo "- **Custom domain**: [https://ic-basilisk.tech](https://ic-basilisk.tech) _(after domain migration)_" >> $GITHUB_STEP_SUMMARY

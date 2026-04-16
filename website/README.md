@@ -57,6 +57,23 @@ on manual dispatch. It requires:
 - `canister_ids.json` committed in `website/` (written by the first local deploy)
 - Repository secret `IC_IDENTITY_PEM` — PEM-encoded identity that controls the canister
 
+### Cycles monitoring (CycleOps)
+
+This canister is monitored by [CycleOps](https://cycleops.dev) under the
+shared team `xee7m-jddpf-rwyzl-pobzx-izlbn-vhsbt-ublzn-lf4vo-kbvz2-buwfk-xh6`
+with an auto-top-up rule (threshold: 2 TC, refill to: 4 TC), matching the
+convention used across all other monitored canisters.
+
+Controllers of `basilisk_website`:
+
+- `ah6ac-cc73l-bb2zc-ni7bh-jov4q-roeyj-6k2ob-mkg5j-pequi-vuaa6-2ae` — deploy identity
+- `cpbhu-5iaaa-aaaad-aalta-cai` — CycleOps V3 blackhole (required for monitoring)
+
+To adjust the top-up rule or remove the canister from monitoring, use the
+CycleOps dashboard or the `dfx canister call qc4nb-ciaaa-aaaap-aawqa-cai ...`
+API pattern documented in the realms repo
+(`realms/scripts/update_cycleops_thresholds.sh`).
+
 ## Custom domain migration (`ic-basilisk.tech`)
 
 Currently `ic-basilisk.tech` points at the `tip_jar_frontend` canister

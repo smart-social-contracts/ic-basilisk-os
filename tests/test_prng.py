@@ -11,7 +11,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from ic_basilisk_toolkit.prng import PRNG
 
-
 # ---------------------------------------------------------------------------
 # Determinism & reproducibility
 # ---------------------------------------------------------------------------

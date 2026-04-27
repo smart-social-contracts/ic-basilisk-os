@@ -68,6 +68,7 @@ def _date_from_epoch_days(total_days: int):
 
 # ── Conversions ──────────────────────────────────────────────────────
 
+
 def epoch_to_date_str(epoch_seconds: int) -> str:
     """Convert epoch seconds to ``"YYYY-MM-DD"``."""
     total_days = epoch_seconds // 86400
@@ -105,6 +106,7 @@ def epoch_to_ic_time(epoch_seconds: int) -> int:
 
 
 # ── Arithmetic ───────────────────────────────────────────────────────
+
 
 def add_days(date_str: str, n: int) -> str:
     """Add *n* days to a ``"YYYY-MM-DD"`` string (negative = subtract)."""

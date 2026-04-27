@@ -10,21 +10,20 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from ic_basilisk_toolkit.date_utils import (
-    is_leap_year,
-    days_in_month,
-    days_in_year,
-    epoch_to_date_str,
-    epoch_to_datetime_str,
-    date_str_to_epoch,
-    ic_time_to_epoch,
-    epoch_to_ic_time,
     add_days,
     add_months,
-    day_of_year,
+    date_str_to_epoch,
     day_of_week,
+    day_of_year,
+    days_in_month,
+    days_in_year,
     diff_days,
+    epoch_to_date_str,
+    epoch_to_datetime_str,
+    epoch_to_ic_time,
+    ic_time_to_epoch,
+    is_leap_year,
 )
-
 
 # ---------------------------------------------------------------------------
 # Leap year
@@ -93,11 +92,17 @@ class TestEpochConversions:
 
     def test_roundtrip(self):
         for date_str in [
-            "1970-01-01", "2000-02-29", "2024-12-31",
-            "1999-12-31", "2025-06-15", "2030-01-01",
+            "1970-01-01",
+            "2000-02-29",
+            "2024-12-31",
+            "1999-12-31",
+            "2025-06-15",
+            "2030-01-01",
         ]:
             epoch = date_str_to_epoch(date_str)
-            assert epoch_to_date_str(epoch) == date_str, f"roundtrip failed for {date_str}"
+            assert (
+                epoch_to_date_str(epoch) == date_str
+            ), f"roundtrip failed for {date_str}"
 
     def test_date_str_to_epoch_midnight(self):
         epoch = date_str_to_epoch("1970-01-02")

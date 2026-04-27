@@ -51,7 +51,14 @@ __all__ = [
     # Execution
     "run_code",
     "create_task_entity_class",
+    # Utilities (no canister deps — always importable)
+    "PRNG",
+    "date_utils",
 ]
+
+# Utilities that have no canister-only dependencies — always importable.
+from .prng import PRNG  # noqa: F401
+from . import date_utils  # noqa: F401
 
 # These imports will only work inside a canister (they depend on ic-python-db).
 # When used client-side (e.g. in tests), import individual modules directly.

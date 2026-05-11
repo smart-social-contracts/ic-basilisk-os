@@ -1,0 +1,1 @@
+import{J as f}from"./BRWXwaBk.js";const{subscribe:d,update:r}=f([]);let u=0;function i(s,e,t=4e3){const o=u++;r(n=>[...n,{id:o,type:s,message:e}]),t>0&&setTimeout(()=>c(o),t)}function c(s){r(e=>e.filter(t=>t.id!==s))}const m={subscribe:d,success:s=>i("success",s),error:s=>i("error",s,6e3),info:s=>i("info",s),dismiss:c};export{m as t};

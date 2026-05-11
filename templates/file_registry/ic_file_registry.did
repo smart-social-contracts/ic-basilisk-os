@@ -98,9 +98,9 @@ service : {
   "list_namespaces" : () -> (text) query;
   "list_files" : (text) -> (text) query;
   "get_file" : (text) -> (text) query;
+  "get_stats" : () -> (text) query;
   "list_file_versions" : (text) -> (text) query;
   "get_file_at_version" : (text) -> (text) query;
-  "get_stats" : () -> (text) query;
   "get_acl" : () -> (text) query;
   "store_file" : (text) -> (text);
   "delete_file" : (text) -> (text);

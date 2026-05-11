@@ -1,16 +1,23 @@
 import { AuthClient } from '@dfinity/auth-client';
 import { writable } from 'svelte/store';
+import type { Identity } from '@dfinity/agent';
 
-export const identity = writable(null);
+export const identity = writable<Identity | null>(null);
 export const isAuthenticated = writable(false);
 export const principal = writable('');
 
-let _authClient = null;
+let _authClient: AuthClient | null = null;
 
 const II_URL =
   typeof window !== 'undefined' && window.location.hostname === 'localhost'
     ? `http://localhost:4943?canisterId=rdmx6-jaaaa-aaaaa-aaadq-cai`
     : 'https://identity.ic0.app';
+
+function _applyIdentity(id: Identity) {
+  identity.set(id);
+  isAuthenticated.set(true);
+  principal.set(id.getPrincipal().toText());
+}
 
 export async function initAuth() {
   _authClient = await AuthClient.create();
@@ -20,20 +27,14 @@ export async function initAuth() {
   }
 }
 
-function _applyIdentity(id) {
-  identity.set(id);
-  isAuthenticated.set(true);
-  principal.set(id.getPrincipal().toText());
-}
-
 export async function login() {
   if (!_authClient) _authClient = await AuthClient.create();
-  return new Promise((resolve, reject) => {
-    _authClient.login({
+  return new Promise<void>((resolve, reject) => {
+    _authClient!.login({
       identityProvider: II_URL,
-      maxTimeToLive: BigInt(7 * 24 * 60 * 60 * 1_000_000_000), // 7 days
+      maxTimeToLive: BigInt(7 * 24 * 60 * 60 * 1_000_000_000),
       onSuccess: () => {
-        _applyIdentity(_authClient.getIdentity());
+        _applyIdentity(_authClient!.getIdentity());
         resolve();
       },
       onError: reject,

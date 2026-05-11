@@ -8,7 +8,7 @@
         },
         "ic_file_registry_frontend": {
             "type": "assets",
-            "source": ["frontend/assets"],
+            "source": ["frontend/dist"],
             "dependencies": ["ic_file_registry"]
         }
     }

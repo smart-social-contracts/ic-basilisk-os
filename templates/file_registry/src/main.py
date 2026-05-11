@@ -8,11 +8,12 @@ Stores arbitrary files indexed by (namespace, path) with:
   - Chunked upload for files > 1 MB
 
 Storage layout (persistent filesystem, survives upgrades):
-  /registry/_namespaces.json        index of all namespaces
-  /registry/_acl.json               {namespace: [principal_str, ...]}
-  /registry/{namespace}/_meta.json  {files: {path: {size, content_type, sha256, updated}}}
-  /registry/{namespace}/{path}      actual file content
-  /registry/_chunks/                temporary chunk staging area
+  /registry/_namespaces.json                       index of all namespaces
+  /registry/_acl.json                              {namespace: [principal_str, ...]}
+  /registry/{namespace}/_meta.json                 file index with version history
+  /registry/{namespace}/{path}                     current file content
+  /registry/{namespace}/__versions/{path}/v{N}     archived version blobs
+  /registry/_chunks/                               temporary chunk staging area
 """
 
 import base64
@@ -42,6 +43,7 @@ REGISTRY_DIR = "/registry"
 CHUNKS_DIR = "/registry/_chunks"
 NAMESPACES_FILE = "/registry/_namespaces.json"
 ACL_FILE = "/registry/_acl.json"
+MAX_VERSIONS = 20
 
 CONTENT_TYPES = {
     ".py":   "text/plain",
@@ -147,6 +149,62 @@ def _save_meta(namespace: str, meta: dict):
         f.write(json.dumps(meta))
 
 
+def _versions_dir(namespace: str, path: str) -> str:
+    return os.path.join(REGISTRY_DIR, namespace, "__versions", path.lstrip("/"))
+
+
+def _version_file(namespace: str, path: str, version: int) -> str:
+    return os.path.join(_versions_dir(namespace, path), f"v{version}")
+
+
+def _archive_current_version(namespace: str, path: str, meta: dict):
+    """If the file already exists, copy current blob into the version store."""
+    file_info = meta.get("files", {}).get(path)
+    if not file_info:
+        return
+    fp = _file_path(namespace, path)
+    if not os.path.exists(fp):
+        return
+    version = file_info.get("current_version", 1)
+    vdir = _versions_dir(namespace, path)
+    os.makedirs(vdir, exist_ok=True)
+    vfp = _version_file(namespace, path, version)
+    with open(fp, "rb") as src, open(vfp, "wb") as dst:
+        dst.write(src.read())
+
+
+def _trim_old_versions(namespace: str, path: str, meta: dict):
+    """Keep only the last MAX_VERSIONS entries in history."""
+    file_info = meta.get("files", {}).get(path)
+    if not file_info:
+        return
+    history = file_info.get("history", [])
+    while len(history) > MAX_VERSIONS:
+        oldest = history.pop(0)
+        vfp = _version_file(namespace, path, oldest["version"])
+        try:
+            os.remove(vfp)
+        except FileNotFoundError:
+            pass
+    file_info["history"] = history
+
+
+def _delete_all_versions(namespace: str, path: str):
+    """Remove the entire __versions directory for a file."""
+    vdir = _versions_dir(namespace, path)
+    if not os.path.isdir(vdir):
+        return
+    for fname in os.listdir(vdir):
+        try:
+            os.remove(os.path.join(vdir, fname))
+        except FileNotFoundError:
+            pass
+    try:
+        os.rmdir(vdir)
+    except OSError:
+        pass
+
+
 def _guess_content_type(path: str) -> str:
     for ext, ct in CONTENT_TYPES.items():
         if path.endswith(ext):
@@ -234,6 +292,7 @@ def list_files(args: text) -> text:
             "content_type": info.get("content_type", "application/octet-stream"),
             "sha256": info.get("sha256", ""),
             "updated": info.get("updated", 0),
+            "current_version": info.get("current_version", 1),
         }
         for path, info in files.items()
     ]
@@ -287,6 +346,90 @@ def get_stats() -> text:
 
 
 @query
+def list_file_versions(args: text) -> text:
+    """Return version history for a specific file.
+
+    Args (JSON): {"namespace": str, "path": str}
+    Returns JSON: [{"version": int, "size": int, "sha256": str, "content_type": str, "updated": int, "is_current": bool}]
+    """
+    params = json.loads(args)
+    namespace = params["namespace"]
+    path = params["path"].lstrip("/")
+
+    meta = _load_meta(namespace)
+    file_info = meta.get("files", {}).get(path)
+    if not file_info:
+        return json.dumps({"error": f"Not found: {namespace}/{path}"})
+
+    history = file_info.get("history", [])
+    result = [
+        {
+            "version": h["version"],
+            "size": h.get("size", 0),
+            "sha256": h.get("sha256", ""),
+            "content_type": h.get("content_type", ""),
+            "updated": h.get("updated", 0),
+            "is_current": False,
+        }
+        for h in history
+    ]
+    result.append({
+        "version": file_info.get("current_version", 1),
+        "size": file_info.get("size", 0),
+        "sha256": file_info.get("sha256", ""),
+        "content_type": file_info.get("content_type", ""),
+        "updated": file_info.get("updated", 0),
+        "is_current": True,
+    })
+    return json.dumps(result)
+
+
+@query
+def get_file_at_version(args: text) -> text:
+    """Return file content at a specific version.
+
+    Args (JSON): {"namespace": str, "path": str, "version": int}
+    Returns JSON: {"content_b64": str, "content_type": str, "size": int, "sha256": str, "version": int}
+    """
+    params = json.loads(args)
+    namespace = params["namespace"]
+    path = params["path"].lstrip("/")
+    version = int(params["version"])
+
+    meta = _load_meta(namespace)
+    file_info = meta.get("files", {}).get(path)
+    if not file_info:
+        return json.dumps({"error": f"Not found: {namespace}/{path}"})
+
+    current_version = file_info.get("current_version", 1)
+
+    if version == current_version:
+        fp = _file_path(namespace, path)
+    else:
+        fp = _version_file(namespace, path, version)
+
+    try:
+        with open(fp, "rb") as f:
+            content = f.read()
+    except FileNotFoundError:
+        return json.dumps({"error": f"Version {version} not found for {namespace}/{path}"})
+
+    ct = file_info.get("content_type") or _guess_content_type(path)
+    history = file_info.get("history", [])
+    version_info = next((h for h in history if h["version"] == version), None)
+    if version_info:
+        ct = version_info.get("content_type", ct)
+
+    return json.dumps({
+        "content_b64": base64.b64encode(content).decode("ascii"),
+        "content_type": ct,
+        "size": len(content),
+        "sha256": hashlib.sha256(content).hexdigest(),
+        "version": version,
+    })
+
+
+@query
 def get_acl() -> text:
     """Return the full publisher ACL: {namespace: [principal_str]}."""
     return json.dumps(_load_acl())
@@ -325,19 +468,40 @@ def store_file(args: text) -> text:
     caller_str = ic.caller().to_str()
     _ensure_namespace_exists(namespace, caller_str)
 
+    meta = _load_meta(namespace)
+    old_info = meta.get("files", {}).get(path)
+
+    _archive_current_version(namespace, path, meta)
+
     fp = _file_path(namespace, path)
     os.makedirs(os.path.dirname(fp), exist_ok=True)
     with open(fp, "wb") as f:
         f.write(content)
 
     sha256 = hashlib.sha256(content).hexdigest()
-    meta = _load_meta(namespace)
+    now = ic.time()
+    prev_version = old_info.get("current_version", 0) if old_info else 0
+    new_version = prev_version + 1
+
+    history = (old_info.get("history", []) if old_info else [])[:]
+    if old_info:
+        history.append({
+            "version": prev_version,
+            "size": old_info.get("size", 0),
+            "sha256": old_info.get("sha256", ""),
+            "content_type": old_info.get("content_type", ""),
+            "updated": old_info.get("updated", 0),
+        })
+
     meta.setdefault("files", {})[path] = {
         "size": len(content),
         "content_type": content_type,
         "sha256": sha256,
-        "updated": ic.time(),
+        "updated": now,
+        "current_version": new_version,
+        "history": history,
     }
+    _trim_old_versions(namespace, path, meta)
     _save_meta(namespace, meta)
 
     return json.dumps({
@@ -346,6 +510,7 @@ def store_file(args: text) -> text:
         "path": path,
         "size": len(content),
         "sha256": sha256,
+        "version": new_version,
     })
 
 
@@ -368,6 +533,8 @@ def delete_file(args: text) -> text:
         os.remove(fp)
     except FileNotFoundError:
         return json.dumps({"error": f"Not found: {namespace}/{path}"})
+
+    _delete_all_versions(namespace, path)
 
     meta = _load_meta(namespace)
     meta.get("files", {}).pop(path, None)
@@ -419,6 +586,7 @@ def delete_namespace(args: text) -> text:
 
     meta = _load_meta(namespace)
     for path in list(meta.get("files", {}).keys()):
+        _delete_all_versions(namespace, path)
         fp = _file_path(namespace, path)
         try:
             os.remove(fp)
@@ -585,6 +753,11 @@ def finalize_chunked_file(args: text) -> text:
     caller_str = ic.caller().to_str()
     _ensure_namespace_exists(namespace, caller_str)
 
+    meta = _load_meta(namespace)
+    old_info = meta.get("files", {}).get(path)
+
+    _archive_current_version(namespace, path, meta)
+
     fp = _file_path(namespace, path)
     os.makedirs(os.path.dirname(fp), exist_ok=True)
 
@@ -602,14 +775,29 @@ def finalize_chunked_file(args: text) -> text:
 
     os.remove(pending_path)
     sha256 = h.hexdigest()
+    now = ic.time()
+    prev_version = old_info.get("current_version", 0) if old_info else 0
+    new_version = prev_version + 1
 
-    meta = _load_meta(namespace)
+    history = (old_info.get("history", []) if old_info else [])[:]
+    if old_info:
+        history.append({
+            "version": prev_version,
+            "size": old_info.get("size", 0),
+            "sha256": old_info.get("sha256", ""),
+            "content_type": old_info.get("content_type", ""),
+            "updated": old_info.get("updated", 0),
+        })
+
     meta.setdefault("files", {})[path] = {
         "size": total_size,
         "content_type": content_type,
         "sha256": sha256,
-        "updated": ic.time(),
+        "updated": now,
+        "current_version": new_version,
+        "history": history,
     }
+    _trim_old_versions(namespace, path, meta)
     _save_meta(namespace, meta)
 
     return json.dumps({
@@ -618,6 +806,7 @@ def finalize_chunked_file(args: text) -> text:
         "path": path,
         "size": total_size,
         "sha256": sha256,
+        "version": new_version,
     })
 
 

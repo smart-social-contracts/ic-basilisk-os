@@ -191,6 +191,22 @@ jobs:
                   fi
                   dfx canister call "$BACKEND_CANISTER_ID" status --network "$NETWORK" || echo "⚠️ status call failed"
 
+            - name: Setup Node.js (file_registry)
+              if: ${{ inputs.template == 'file_registry' || inputs.template == 'all' }}
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "20"
+
+            - name: Build frontend (file_registry)
+              if: ${{ inputs.template == 'file_registry' || inputs.template == 'all' }}
+              working-directory: templates/file_registry/frontend
+              env:
+                  VITE_CANISTER_ID: ${{ env.FILE_REGISTRY_BACKEND_CANISTER_ID }}
+              run: |
+                  npm ci
+                  npm run build
+                  ls -la dist/
+
             - name: Deploy frontend (file_registry)
               if: ${{ inputs.template == 'file_registry' || inputs.template == 'all' }}
               working-directory: templates/file_registry

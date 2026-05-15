@@ -1,6 +1,6 @@
 # ic-basilisk-toolkit
 
-**Basilisk Toolkit** — A set of ready-made tools on top of the[Basilisk](https://github.com/smart-social-contracts/basilisk) CDK for IC Python canisters.
+**Basilisk Toolkit** — A set of ready-made tools on top of [Basilisk](https://github.com/smart-social-contracts/basilisk) CDK for IC Python canisters.
 
 **Live demo:** [https://ic-basilisk.tech/](https://ic-basilisk.tech/).
 
@@ -200,6 +200,7 @@ basilisk-toolkit shell --canister my_app --network ic      # Interactive shell
 basilisk-toolkit sshd --canister my_app --network ic       # SSH/SFTP server
 ```
 
+> **Security note:** The `sshd` command starts a local development proxy that accepts any password. It is intended for local use only — do not expose it on a public network without adding proper authentication.
 
 ## Dependencies
 

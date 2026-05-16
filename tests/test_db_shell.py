@@ -486,7 +486,7 @@ class TestDbOneShot:
         cmd = [
             sys.executable,
             "-m",
-            "basilisk.shell",
+            "ic_basilisk_toolkit.shell",
             "--canister",
             canister,
             "--network",
@@ -504,7 +504,7 @@ class TestDbOneShot:
         cmd = [
             sys.executable,
             "-m",
-            "basilisk.shell",
+            "ic_basilisk_toolkit.shell",
             "--canister",
             canister,
             "--network",
@@ -522,7 +522,7 @@ class TestDbOneShot:
         cmd = [
             sys.executable,
             "-m",
-            "basilisk.shell",
+            "ic_basilisk_toolkit.shell",
             "--canister",
             canister,
             "--network",

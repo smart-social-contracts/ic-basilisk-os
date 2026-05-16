@@ -283,7 +283,7 @@ class TestWalletOneshot:
         cmd = [
             sys.executable,
             "-m",
-            "basilisk.shell",
+            "ic_basilisk_toolkit.shell",
             "--canister",
             canister,
             "--network",

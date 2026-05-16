@@ -200,6 +200,28 @@ basilisk-toolkit shell --canister my_app --network ic      # Interactive shell
 basilisk-toolkit sshd --canister my_app --network ic       # SSH/SFTP server
 ```
 
+## Data Browsing (read-only)
+
+Canisters with `__basilisk_features__ = ["browse"]` expose a `__browse__` query endpoint for instant, free, read-only data access:
+
+```python
+from ic_basilisk_toolkit.shell import canister_browse, canister_schema, canister_keys, canister_get
+
+# Get the canister's data schema
+schema = canister_schema("my_canister", network="ic")
+
+# List keys in a stable map (paginated)
+keys = canister_keys("my_canister", "users", network="ic")
+
+# Read a single value
+value = canister_get("my_canister", "users", "alice", network="ic")
+
+# Generic browse with any action
+result = canister_browse("items", "my_canister", network="ic", map="users", limit=50)
+```
+
+Unlike `__shell__` (which is an `@update` call requiring consensus and controller access), `__browse__` is a `@query` — instant response, no cycles cost, and public by default.
+
 > **Security note:** The `sshd` command starts a local development proxy that accepts any password. It is intended for local use only — do not expose it on a public network without adding proper authentication.
 
 ## Dependencies

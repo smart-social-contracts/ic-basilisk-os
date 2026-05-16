@@ -2,7 +2,8 @@
 Basilisk Toolkit Test Canister — minimal canister for integration testing.
 
 Provides:
-  - execute_code_shell: Execute Python code and return output (the core shell endpoint)
+  - __shell__: Execute Python code and return output (the core shell endpoint)
+  - __browse__: Read-only data introspection
   - status: Health check
 
 The frozen_stdlib_preamble automatically provides the in-memory filesystem (memfs).
@@ -30,6 +31,8 @@ from basilisk.canisters.management import (
 )
 from ic_python_db import Database
 
+__basilisk_features__ = ["shell", "browse"]
+
 # ---------------------------------------------------------------------------
 # Persistent database storage (survives canister upgrades)
 # ---------------------------------------------------------------------------
@@ -38,7 +41,7 @@ storage = StableBTreeMap[str, str](memory_id=1, max_key_size=100, max_value_size
 Database.init(db_storage=storage, audit_enabled=True)
 
 # ---------------------------------------------------------------------------
-# Persistent shell namespace (per principal)
+# Custom shell with guard (overrides the default __shell__)
 # ---------------------------------------------------------------------------
 
 _shell_ns_by_principal = {}
@@ -53,7 +56,7 @@ def guard_against_non_controllers() -> GuardResult:
 
 
 @update(guard=guard_against_non_controllers)
-def execute_code_shell(code: str) -> str:
+def __shell__(code: str) -> str:
     """Execute Python code in a persistent namespace and return the output.
 
     Each caller principal gets its own isolated namespace that persists

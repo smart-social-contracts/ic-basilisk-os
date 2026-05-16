@@ -54,7 +54,7 @@ def _local_canister_exec(code, canister, network):
     cmd = ["dfx", "canister", "call"]
     if network:
         cmd.extend(["--network", network])
-    cmd.extend([canister, "execute_code_shell", f'("{escaped}")'])
+    cmd.extend([canister, "__shell__", f'("{escaped}")'])
     try:
         r = subprocess.run(
             cmd,

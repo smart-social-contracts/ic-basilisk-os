@@ -23,6 +23,8 @@ from basilisk import (
     StableBTreeMap, GuardResult, init, post_upgrade,
 )
 from ic_python_db import Database
+
+__basilisk_features__ = ["shell", "browse"]
 from ic_python_logging import get_logger
 
 _log = get_logger("tip_jar")
@@ -92,7 +94,7 @@ def withdraw(token_name: text, to_principal: text, amount: nat64) -> Async[text]
 
 
 @update(guard=guard_against_non_controllers)
-def execute_code_shell(code: str) -> str:
+def __shell__(code: str) -> str:
     """Execute Python code in a persistent namespace (basilisk shell).
 
     Each caller principal gets its own isolated namespace that persists

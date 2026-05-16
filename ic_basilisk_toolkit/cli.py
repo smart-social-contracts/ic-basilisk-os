@@ -147,7 +147,7 @@ def cmd_exec(args: list[str]):
         cmd.extend(["--identity", identity])
     if network:
         cmd.extend(["--network", network])
-    cmd.extend([canister, "execute_code_shell", f'("{escaped_code}")'])
+    cmd.extend([canister, "__shell__", f'("{escaped_code}")'])
 
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)

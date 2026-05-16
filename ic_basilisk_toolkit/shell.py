@@ -3,7 +3,7 @@
 Basilisk Shell
 
 A shell interpreter for IC canisters running basilisk.
-Commands are executed inside the canister via execute_code_shell.
+Commands are executed inside the canister via __shell__.
 
 Usage:
     basilisk shell --canister <id> [--network <net>]           Interactive mode
@@ -182,7 +182,7 @@ def canister_exec(code: str, canister: str, network: str = None) -> str:
     """Send Python code to the canister and return the output."""
     escaped = code.replace('"', '\\"').replace("\n", "\\n")
     cmd = _dfx_call_cmd(network)
-    cmd.extend([canister, "execute_code_shell", f'("{escaped}")'])
+    cmd.extend([canister, "__shell__", f'("{escaped}")'])
 
     try:
         r = _run_dfx_with_retries(cmd, timeout_s=120)
@@ -193,6 +193,52 @@ def canister_exec(code: str, canister: str, network: str = None) -> str:
         return "[error] canister call timed out (120s)"
     except FileNotFoundError:
         return "[error] dfx not found — install the DFINITY SDK"
+
+
+def canister_browse(action: str, canister: str, network: str = None, **kwargs) -> dict:
+    """Query canister data read-only via the __browse__ endpoint.
+
+    Uses a query call (instant, free, no consensus).
+    """
+    import json as _json
+
+    query = _json.dumps({"action": action, **kwargs})
+    escaped = query.replace('"', '\\"')
+    cmd = _dfx_call_cmd(network, extra_flags=["--query"])
+    cmd.extend([canister, "__browse__", f'("{escaped}")'])
+
+    try:
+        r = _run_dfx_with_retries(cmd, timeout_s=30)
+        if r.returncode != 0:
+            return {"error": r.stderr.strip()}
+        raw = _parse_candid(r.stdout)
+        return _json.loads(raw)
+    except subprocess.TimeoutExpired:
+        return {"error": "canister call timed out (30s)"}
+    except FileNotFoundError:
+        return {"error": "dfx not found — install the DFINITY SDK"}
+    except (_json.JSONDecodeError, ValueError):
+        return {"error": f"invalid response: {raw}"}
+
+
+def canister_schema(canister: str, network: str = None) -> dict:
+    """Get the canister's data schema (stable structures, types)."""
+    return canister_browse("schema", canister, network)
+
+
+def canister_get(canister: str, map_name: str, key: str, network: str = None):
+    """Read a single value from a stable map."""
+    return canister_browse("get", canister, network, map=map_name, key=key)
+
+
+def canister_keys(canister: str, map_name: str, network: str = None) -> dict:
+    """List all keys in a stable map."""
+    return canister_browse("keys", canister, network, map=map_name)
+
+
+def canister_items(canister: str, map_name: str, network: str = None) -> dict:
+    """List all key-value pairs in a stable map."""
+    return canister_browse("items", canister, network, map=map_name)
 
 
 # ---------------------------------------------------------------------------

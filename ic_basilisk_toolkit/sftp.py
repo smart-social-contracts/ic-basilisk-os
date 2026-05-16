@@ -2,7 +2,7 @@
 Basilisk SFTP — virtual filesystem backed by a Basilisk canister's memfs.
 
 Each SFTP operation translates to Python code executed on the canister via
-execute_code_shell. Binary data is base64-encoded for transport.
+__shell__. Binary data is base64-encoded for transport.
 """
 
 import base64

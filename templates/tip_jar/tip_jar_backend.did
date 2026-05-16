@@ -116,6 +116,7 @@ service : {
   "get_public_key" : () -> (text);
   "withdraw" : (text, text, nat64) -> (text);
   "download_page" : (text, text) -> (text);
-  "execute_code_shell" : (text) -> (text);
+  "__shell__" : (text) -> (text);
+  "__browse__" : (text) -> (text) query;
   "__get_candid_interface_tmp_hack" : () -> (text) query;
 }

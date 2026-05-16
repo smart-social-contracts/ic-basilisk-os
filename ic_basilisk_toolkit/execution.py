@@ -110,7 +110,7 @@ def _ensure_codex_lazy_loading():
     Also installs a sys.meta_path finder so that ``import codex_name`` works
     for codex modules that were never pre-stubbed.
 
-    This is idempotent — safe to call on every run_code / execute_code_shell
+    This is idempotent — safe to call on every run_code / __shell__
     invocation; the actual patching only happens once.
     """
     global _codex_lazy_loading_installed

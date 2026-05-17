@@ -231,6 +231,10 @@ Unlike `__shell__` (which is an `@update` call requiring consensus and controlle
 - [ic-python-logging](https://github.com/smart-social-contracts/ic-python-logging) — Structured logging
 
 
+## Disclaimer
+
+This software is in alpha and may have unknown security vulnerabilities. It has not undergone an independent security audit. Use at your own risk — see the Basilisk [disclaimer](https://github.com/smart-social-contracts/basilisk#disclaimer) for details.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).

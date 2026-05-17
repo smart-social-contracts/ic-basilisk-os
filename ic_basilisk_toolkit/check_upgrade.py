@@ -15,8 +15,7 @@ def _call_browse(
     canister: str, query: dict, network: str | None = None, identity: str | None = None
 ) -> dict:
     """Call __browse__ on a canister and return the parsed JSON response."""
-    escaped = json.dumps(json.dumps(query)).replace('"', '\\"', 1)
-    q_str = json.dumps(query)
+    q_str = json.dumps(query).replace('"', r'\"')
     cmd = ["dfx", "canister", "call"]
     if identity:
         cmd.extend(["--identity", identity])
@@ -29,14 +28,16 @@ def _call_browse(
         raise RuntimeError(f"dfx call failed: {result.stderr.strip()}")
 
     raw = result.stdout.strip()
-    # Parse Candid text response: ("...") or (text "...")
+    # Parse Candid text response: ("...",) or (text "...")
     if raw.startswith("(") and raw.endswith(")"):
         raw = raw[1:-1].strip()
+    if raw.endswith(","):
+        raw = raw[:-1].strip()
     if raw.startswith("text "):
         raw = raw[5:].strip()
     if raw.startswith('"') and raw.endswith('"'):
         raw = raw[1:-1]
-    raw = raw.replace("\\n", "\n").replace('\\"', '"').replace("\\\\", "\\")
+    raw = raw.replace('\\"', '"').replace("\\\\", "\\")
     return json.loads(raw)
 
 
@@ -44,10 +45,18 @@ def _load_local_schema(project_dir: str | None = None) -> dict:
     """Build the schema from local Entity class definitions.
 
     Imports all Python modules under the project's src/ directory,
-    then builds the schema from registered Entity types.
+    then builds the schema from only the newly registered Entity types
+    (ignoring toolkit-internal entities loaded earlier).
     """
     import importlib
     import importlib.util
+
+    from ic_python_db import Database, Entity
+
+    pre_deferred_names = {t.__name__ for t in Entity._deferred_types}
+    pre_instance = Database._instance
+    pre_registered = set(pre_instance._entity_types.keys()) if pre_instance else set()
+    pre_all = pre_registered | pre_deferred_names
 
     src_dir = Path(project_dir or ".") / "src"
     if not src_dir.exists():
@@ -69,12 +78,14 @@ def _load_local_schema(project_dir: str | None = None) -> dict:
         except Exception:
             pass
 
-    from ic_python_db import Database
-
-    db = Database.get_instance()
     from ic_python_db.schema import build_schema
 
-    return build_schema(db._entity_types)
+    db = Database._instance or Database.get_instance()
+    new_types = {
+        k: v for k, v in db._entity_types.items()
+        if k not in pre_all
+    }
+    return build_schema(new_types)
 
 
 def _format_change(change) -> str:
@@ -84,18 +95,49 @@ def _format_change(change) -> str:
     return f"  {icon}  {loc}: {change.reason}"
 
 
+def _print_verbose_schemas(old_schema: dict, new_schema: dict, output_dir: str | None = None):
+    """Print both schemas side-by-side and write them to files for manual comparison."""
+    schema_dir = Path(output_dir) if output_dir else Path(".basilisk/schemas")
+    schema_dir.mkdir(parents=True, exist_ok=True)
+
+    old_path = schema_dir / "on_chain_schema.json"
+    new_path = schema_dir / "local_schema.json"
+
+    old_pretty = json.dumps(old_schema, indent=2, sort_keys=True)
+    new_pretty = json.dumps(new_schema, indent=2, sort_keys=True)
+
+    old_path.write_text(old_pretty + "\n")
+    new_path.write_text(new_pretty + "\n")
+
+    print(f"\n--- On-chain schema ({old_path}) ---")
+    print(old_pretty)
+    print(f"\n--- Local schema ({new_path}) ---")
+    print(new_pretty)
+    print(f"\nSchemas written to {schema_dir}/ for manual comparison.")
+    print(f"  diff {old_path} {new_path}\n")
+
+
 def cmd_check_upgrade(args: list[str]):
     """Check schema compatibility before upgrading a canister."""
     canister = None
     network = None
     identity = None
     project_dir = None
+    verbose = False
+    output_dir = None
 
     i = 0
     while i < len(args):
         if args[i] in ("-h", "--help"):
             print(_HELP_CHECK_UPGRADE, end="")
             return
+        elif args[i] in ("--verbose", "-v"):
+            verbose = True
+            i += 1
+        elif args[i] == "--output-dir" and i + 1 < len(args):
+            verbose = True
+            output_dir = args[i + 1]
+            i += 2
         elif args[i] == "--canister" and i + 1 < len(args):
             canister = args[i + 1]
             i += 2
@@ -148,6 +190,10 @@ def cmd_check_upgrade(args: list[str]):
     except Exception as e:
         print(f"Error building local schema: {e}", file=sys.stderr)
         sys.exit(1)
+
+    # 2b. Verbose: dump schemas
+    if verbose:
+        _print_verbose_schemas(old_schema, new_schema, output_dir=output_dir)
 
     # 3. Diff
     from ic_python_db.schema import _has_custom_migrate, diff_schemas, schema_hash
@@ -219,9 +265,12 @@ Options:
   --network <net>   Network: local, ic, or URL     [default: local]
   --identity <name> dfx identity to use            [default: current identity]
   --project <dir>   Project directory with src/     [default: current dir]
+  -v, --verbose     Print full schemas and write them to .basilisk/schemas/
+  --output-dir <d>  Directory to write schema files  [default: .basilisk/schemas/]
 
 Examples:
   basilisk check-upgrade                            Auto-detect canister
   basilisk check-upgrade --canister my_app          Explicit canister
   basilisk check-upgrade --network ic               Check against mainnet
+  basilisk check-upgrade -v                         Show full schema details
 """

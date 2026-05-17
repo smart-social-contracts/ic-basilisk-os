@@ -11,8 +11,9 @@ import sys
 from pathlib import Path
 
 
-def _call_browse(canister: str, query: dict, network: str | None = None,
-                 identity: str | None = None) -> dict:
+def _call_browse(
+    canister: str, query: dict, network: str | None = None, identity: str | None = None
+) -> dict:
     """Call __browse__ on a canister and return the parsed JSON response."""
     escaped = json.dumps(json.dumps(query)).replace('"', '\\"', 1)
     q_str = json.dumps(query)
@@ -25,9 +26,7 @@ def _call_browse(canister: str, query: dict, network: str | None = None,
 
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
     if result.returncode != 0:
-        raise RuntimeError(
-            f"dfx call failed: {result.stderr.strip()}"
-        )
+        raise RuntimeError(f"dfx call failed: {result.stderr.strip()}")
 
     raw = result.stdout.strip()
     # Parse Candid text response: ("...") or (text "...")
@@ -71,8 +70,10 @@ def _load_local_schema(project_dir: str | None = None) -> dict:
             pass
 
     from ic_python_db import Database
+
     db = Database.get_instance()
     from ic_python_db.schema import build_schema
+
     return build_schema(db._entity_types)
 
 
@@ -113,6 +114,7 @@ def cmd_check_upgrade(args: list[str]):
 
     if not canister:
         from ic_basilisk_toolkit.cli import _detect_canister_from_dfx
+
         canister = _detect_canister_from_dfx()
         if not canister:
             print(
@@ -168,6 +170,7 @@ def cmd_check_upgrade(args: list[str]):
     if breaking_count > 0:
         print(f"\n{breaking_count} breaking change(s) detected.")
         from ic_python_db import Database
+
         db = Database.get_instance()
         missing_migrate = []
         for change in changes:
@@ -181,8 +184,10 @@ def cmd_check_upgrade(args: list[str]):
                 print(f"  {change.entity_type}: migrate() MISSING")
 
         if missing_migrate:
-            print(f"\nUpgrade will be REJECTED: "
-                  f"{len(missing_migrate)} breaking change(s) without migrate().")
+            print(
+                f"\nUpgrade will be REJECTED: "
+                f"{len(missing_migrate)} breaking change(s) without migrate()."
+            )
             sys.exit(1)
         else:
             print(f"\nAll breaking changes have migrate(). Safe to upgrade.")

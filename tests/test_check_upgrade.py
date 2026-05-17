@@ -14,14 +14,15 @@ import pytest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 try:
-    import ic_python_db  # noqa: F401
+    from ic_python_db.schema import diff_schemas, schema_hash  # noqa: F401
 
-    _has_ic_python_db = True
-except ImportError:
-    _has_ic_python_db = False
+    _has_ic_python_db_schema = True
+except (ImportError, ModuleNotFoundError):
+    _has_ic_python_db_schema = False
 
 _needs_ic_python_db = pytest.mark.skipif(
-    not _has_ic_python_db, reason="ic_python_db not installed"
+    not _has_ic_python_db_schema,
+    reason="ic_python_db with schema module not installed (needs >= 0.8.0)",
 )
 
 from ic_basilisk_toolkit.check_upgrade import (

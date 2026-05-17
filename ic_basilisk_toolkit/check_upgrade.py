@@ -150,7 +150,7 @@ def cmd_check_upgrade(args: list[str]):
         sys.exit(1)
 
     # 3. Diff
-    from ic_python_db.schema import diff_schemas, schema_hash, _has_custom_migrate
+    from ic_python_db.schema import _has_custom_migrate, diff_schemas, schema_hash
 
     changes = diff_schemas(old_schema, new_schema)
 

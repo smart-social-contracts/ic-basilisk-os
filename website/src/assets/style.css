@@ -236,7 +236,7 @@ pre.code .comment { color: var(--text-muted); }
 /* ---------- Template cards ---------- */
 .template-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: 1fr 1fr;
   gap: 1rem;
 }
 .template {
@@ -376,5 +376,6 @@ footer a:hover { color: var(--text); }
   .hero h1 { font-size: 2.1rem; }
   .hero .tagline { font-size: 1rem; }
   .card { padding: 1.25rem; }
+  .template-grid { grid-template-columns: 1fr; }
   .template-meta { flex-direction: column; gap: .25rem; }
 }

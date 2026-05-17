@@ -42,6 +42,7 @@ exec = "ic_basilisk_toolkit.cli:plugin_exec"
 sshd = "ic_basilisk_toolkit.cli:plugin_sshd"
 deploy = "ic_basilisk_toolkit.cli:plugin_deploy"
 upgrade = "ic_basilisk_toolkit.cli:plugin_upgrade"
+check-upgrade = "ic_basilisk_toolkit.cli:plugin_check_upgrade"
 versions = "ic_basilisk_toolkit.cli:plugin_versions"
 deployments = "ic_basilisk_toolkit.cli:plugin_deployments"
 

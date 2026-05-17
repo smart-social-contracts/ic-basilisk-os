@@ -9,6 +9,7 @@ Commands:
   sshd             Start an SSH/SFTP server proxy to a canister
   deploy           Deploy a new basilisk canister from the on-chain deployer
   upgrade          Upgrade an existing canister to a new WASM version
+  check-upgrade    Check schema compatibility before upgrading
   versions         List available WASM versions on the deployer
   deployments      List deployment history
 
@@ -200,6 +201,11 @@ def main():
 
         cmd_upgrade(sys.argv[2:])
 
+    elif command == "check-upgrade":
+        from ic_basilisk_toolkit.check_upgrade import cmd_check_upgrade
+
+        cmd_check_upgrade(sys.argv[2:])
+
     elif command == "versions":
         from ic_basilisk_toolkit.deployer import cmd_versions
 
@@ -266,6 +272,13 @@ def plugin_upgrade():
     from ic_basilisk_toolkit.deployer import cmd_upgrade
 
     cmd_upgrade(sys.argv[2:])
+
+
+def plugin_check_upgrade():
+    """basilisk check-upgrade — Check schema compatibility before upgrading."""
+    from ic_basilisk_toolkit.check_upgrade import cmd_check_upgrade
+
+    cmd_check_upgrade(sys.argv[2:])
 
 
 def plugin_versions():

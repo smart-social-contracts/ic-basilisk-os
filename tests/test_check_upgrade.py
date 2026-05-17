@@ -13,13 +13,23 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+try:
+    import ic_python_db  # noqa: F401
+
+    _has_ic_python_db = True
+except ImportError:
+    _has_ic_python_db = False
+
+_needs_ic_python_db = pytest.mark.skipif(
+    not _has_ic_python_db, reason="ic_python_db not installed"
+)
+
 from ic_basilisk_toolkit.check_upgrade import (
     _call_browse,
     _format_change,
     _load_local_schema,
     cmd_check_upgrade,
 )
-
 
 # ---------------------------------------------------------------------------
 # _call_browse
@@ -153,7 +163,9 @@ class TestCmdCheckUpgrade:
     def test_help_flag(self, capsys):
         cmd_check_upgrade(["-h"])
         captured = capsys.readouterr()
-        assert "check-upgrade" in captured.out.lower() or "check" in captured.out.lower()
+        assert (
+            "check-upgrade" in captured.out.lower() or "check" in captured.out.lower()
+        )
         assert "canister" in captured.out.lower()
 
     def test_help_long_flag(self, capsys):
@@ -168,9 +180,7 @@ class TestCmdCheckUpgrade:
 
     def test_no_canister_no_dfx_json_exits(self, tmp_path, monkeypatch):
         monkeypatch.chdir(tmp_path)
-        with patch(
-            "ic_basilisk_toolkit.check_upgrade._call_browse"
-        ) as mock_browse:
+        with patch("ic_basilisk_toolkit.check_upgrade._call_browse") as mock_browse:
             # _detect_canister_from_dfx will fail, so it should exit
             with pytest.raises(SystemExit) as exc_info:
                 cmd_check_upgrade([])
@@ -187,11 +197,14 @@ class TestCmdCheckUpgrade:
                 cmd_check_upgrade(["--canister", "test_canister"])
             assert exc_info.value.code == 1
 
+    @_needs_ic_python_db
     def test_no_changes_exits_zero(self):
         old_schema = {
             "User": {
                 "version": 1,
-                "fields": {"name": {"kind": "property", "type": "String", "default": ""}},
+                "fields": {
+                    "name": {"kind": "property", "type": "String", "default": ""}
+                },
                 "relationships": {},
             }
         }
@@ -201,22 +214,28 @@ class TestCmdCheckUpgrade:
             "stable_maps": {},
         }
 
-        with patch(
-            "ic_basilisk_toolkit.check_upgrade._call_browse",
-            return_value=browse_response,
-        ), patch(
-            "ic_basilisk_toolkit.check_upgrade._load_local_schema",
-            return_value=old_schema,
+        with (
+            patch(
+                "ic_basilisk_toolkit.check_upgrade._call_browse",
+                return_value=browse_response,
+            ),
+            patch(
+                "ic_basilisk_toolkit.check_upgrade._load_local_schema",
+                return_value=old_schema,
+            ),
         ):
             with pytest.raises(SystemExit) as exc_info:
                 cmd_check_upgrade(["--canister", "test_canister"])
             assert exc_info.value.code == 0
 
+    @_needs_ic_python_db
     def test_safe_changes_exit_zero(self):
         old_schema = {
             "User": {
                 "version": 1,
-                "fields": {"name": {"kind": "property", "type": "String", "default": ""}},
+                "fields": {
+                    "name": {"kind": "property", "type": "String", "default": ""}
+                },
                 "relationships": {},
             }
         }
@@ -232,17 +251,21 @@ class TestCmdCheckUpgrade:
         }
         browse_response = {"entities": old_schema, "schema_hash": "abc"}
 
-        with patch(
-            "ic_basilisk_toolkit.check_upgrade._call_browse",
-            return_value=browse_response,
-        ), patch(
-            "ic_basilisk_toolkit.check_upgrade._load_local_schema",
-            return_value=new_schema,
+        with (
+            patch(
+                "ic_basilisk_toolkit.check_upgrade._call_browse",
+                return_value=browse_response,
+            ),
+            patch(
+                "ic_basilisk_toolkit.check_upgrade._load_local_schema",
+                return_value=new_schema,
+            ),
         ):
             with pytest.raises(SystemExit) as exc_info:
                 cmd_check_upgrade(["--canister", "test_canister"])
             assert exc_info.value.code == 0
 
+    @_needs_ic_python_db
     def test_breaking_change_without_migrate_exits_one(self):
         old_schema = {
             "User": {
@@ -264,18 +287,23 @@ class TestCmdCheckUpgrade:
         mock_db = MagicMock()
         mock_db._entity_types = {"User": type("User", (), {})}
 
-        with patch(
-            "ic_basilisk_toolkit.check_upgrade._call_browse",
-            return_value=browse_response,
-        ), patch(
-            "ic_basilisk_toolkit.check_upgrade._load_local_schema",
-            return_value=new_schema,
-        ), patch(
-            "ic_python_db.Database.get_instance",
-            return_value=mock_db,
-        ), patch(
-            "ic_python_db.schema._has_custom_migrate",
-            return_value=False,
+        with (
+            patch(
+                "ic_basilisk_toolkit.check_upgrade._call_browse",
+                return_value=browse_response,
+            ),
+            patch(
+                "ic_basilisk_toolkit.check_upgrade._load_local_schema",
+                return_value=new_schema,
+            ),
+            patch(
+                "ic_python_db.Database.get_instance",
+                return_value=mock_db,
+            ),
+            patch(
+                "ic_python_db.schema._has_custom_migrate",
+                return_value=False,
+            ),
         ):
             with pytest.raises(SystemExit) as exc_info:
                 cmd_check_upgrade(["--canister", "test_canister"])

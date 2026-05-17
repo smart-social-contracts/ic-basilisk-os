@@ -236,13 +236,14 @@ pre.code .comment { color: var(--text-muted); }
 /* ---------- Template cards ---------- */
 .template-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 1rem;
 }
 .template {
   display: flex;
-  flex-direction: column;
-  padding: 1.25rem;
+  flex-direction: row;
+  align-items: stretch;
+  padding: 0;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: var(--bg-secondary);
@@ -252,14 +253,13 @@ pre.code .comment { color: var(--text-muted); }
 }
 .template:hover {
   border-color: var(--accent);
-  transform: translateY(-2px);
   box-shadow: var(--shadow-md);
-  text-decoration: none;
+}
+.template-body {
+  flex: 1;
+  padding: 1.25rem;
 }
 .template-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   margin-bottom: .5rem;
 }
 .template h3 {
@@ -267,15 +267,6 @@ pre.code .comment { color: var(--text-muted); }
   font-weight: 600;
   color: var(--text);
   letter-spacing: -0.01em;
-}
-.template-arrow {
-  font-size: 1.25rem;
-  color: var(--text-muted);
-  transition: transform .2s, color .2s;
-}
-.template:hover .template-arrow {
-  color: var(--accent);
-  transform: translateX(3px);
 }
 .template-desc {
   color: var(--text-secondary) !important;
@@ -301,23 +292,21 @@ pre.code .comment { color: var(--text-muted); }
 }
 .template-meta {
   display: flex;
-  gap: 1rem;
-  padding-top: .75rem;
-  border-top: 1px solid var(--border);
-  font-size: .78rem;
-  color: var(--text-muted);
+  flex-direction: column;
+  justify-content: center;
+  gap: .5rem;
+  padding: 1.25rem;
+  border-left: 1px solid var(--border);
+  font-size: .82rem;
+  min-width: 7rem;
 }
-.meta-link {
-  display: inline-flex;
-  align-items: center;
-  gap: .25rem;
-}
-.meta-link a {
+a.meta-link {
   color: var(--text-secondary);
   text-decoration: none;
   font-weight: 500;
+  white-space: nowrap;
 }
-.meta-link a:hover {
+a.meta-link:hover {
   color: var(--accent);
   text-decoration: underline;
 }
@@ -376,6 +365,6 @@ footer a:hover { color: var(--text); }
   .hero h1 { font-size: 2.1rem; }
   .hero .tagline { font-size: 1rem; }
   .card { padding: 1.25rem; }
-  .template-grid { grid-template-columns: 1fr; }
-  .template-meta { flex-direction: column; gap: .25rem; }
+  .template { flex-direction: column; }
+  .template-meta { flex-direction: row; border-left: none; border-top: 1px solid var(--border); }
 }

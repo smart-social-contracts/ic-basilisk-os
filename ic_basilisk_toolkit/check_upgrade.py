@@ -15,7 +15,7 @@ def _call_browse(
     canister: str, query: dict, network: str | None = None, identity: str | None = None
 ) -> dict:
     """Call __browse__ on a canister and return the parsed JSON response."""
-    q_str = json.dumps(query).replace('"', r'\"')
+    q_str = json.dumps(query).replace('"', r"\"")
     cmd = ["dfx", "canister", "call"]
     if identity:
         cmd.extend(["--identity", identity])
@@ -81,10 +81,7 @@ def _load_local_schema(project_dir: str | None = None) -> dict:
     from ic_python_db.schema import build_schema
 
     db = Database._instance or Database.get_instance()
-    new_types = {
-        k: v for k, v in db._entity_types.items()
-        if k not in pre_all
-    }
+    new_types = {k: v for k, v in db._entity_types.items() if k not in pre_all}
     return build_schema(new_types)
 
 
@@ -95,7 +92,9 @@ def _format_change(change) -> str:
     return f"  {icon}  {loc}: {change.reason}"
 
 
-def _print_verbose_schemas(old_schema: dict, new_schema: dict, output_dir: str | None = None):
+def _print_verbose_schemas(
+    old_schema: dict, new_schema: dict, output_dir: str | None = None
+):
     """Print both schemas side-by-side and write them to files for manual comparison."""
     schema_dir = Path(output_dir) if output_dir else Path(".basilisk/schemas")
     schema_dir.mkdir(parents=True, exist_ok=True)

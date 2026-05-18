@@ -106,13 +106,16 @@ bob.friends
 </td></tr>
 <tr>
   <td><strong>Schema Upgrades</strong></td>
-  <td>Pre-deploy schema diff, migration safety, <a href="docs/SCHEMA_UPGRADE_CHECKING.md">read-only data browsing</a></td>
+  <td>Pre-deploy schema diff, migration safety, read-only data browsing</td>
 </tr>
 <tr><td colspan="2">
 
 ```shell
 basilisk check-upgrade --canister my_app --network ic
 ```
+
+See <a href="docs/SCHEMA_UPGRADE_CHECKING.md">documentation</a>.
+
 </td></tr>
 <tr>
   <td><strong>Logging</strong></td>
